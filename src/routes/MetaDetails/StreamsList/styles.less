@@ -95,7 +95,7 @@
             &:hover, &:global(.active) {
                 background-color: var(--overlay-color);
                 opacity: 1;
-    
+
                 .icon {
                     color: var(--primary-foreground-color);
                     opacity: 0.8;
@@ -119,18 +119,53 @@
             &:hover, &:focus, &:global(.active) {
                 background-color: var(--overlay-color);
             }
-    
+
             & >.multiselect-label {
                 color: var(--primary-foreground-color);
             }
-    
+
             & >.multiselect-icon {
                 color: var(--primary-foreground-color);
             }
-    
+
             .multiselect-menu-container {
                 overflow: auto;
             }
+        }
+
+    }
+
+    .filter-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+        margin: 0.5em 1em 0 1em;
+        z-index: 1;
+        overflow: visible;
+
+        .quality-select {
+            flex: none;
+            background-color: transparent;
+
+            &:hover, &:focus, &:global(.active) {
+                background-color: var(--overlay-color);
+            }
+
+            & >.multiselect-label {
+                color: var(--primary-foreground-color);
+            }
+
+            & >.multiselect-icon {
+                color: var(--primary-foreground-color);
+            }
+
+            .multiselect-menu-container {
+                overflow: auto;
+            }
+        }
+
+        .search-bar {
+            flex: 1;
         }
     }
 
@@ -184,6 +219,10 @@
 @media only screen and (max-width: @minimum) {
     .streams-list-container {
         overflow: visible;
+
+        .select-choices-wrapper {
+            flex-wrap: wrap;
+        }
 
         .streams-container {
             margin-top: 0;

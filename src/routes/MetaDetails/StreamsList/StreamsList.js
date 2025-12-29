@@ -5,11 +5,11 @@ const PropTypes = require('prop-types');
 const classnames = require('classnames');
 const { useTranslation } = require('react-i18next');
 const { default: Icon } = require('@stremio/stremio-icons/react');
-const { Button, Image, MultiselectMenu } = require('stremio/components');
+const { Button, Image, MultiselectMenu, SearchBar } = require('stremio/components');
 const { useServices } = require('stremio/services');
 const Stream = require('./Stream');
 const styles = require('./styles');
-const { usePlatform, useProfile } = require('stremio/common');
+const { usePlatform, useProfile, extractStreamQuality, CONSTANTS, useLocalStorage } = require('stremio/common');
 const { default: SeasonEpisodePicker } = require('../EpisodePicker');
 
 const ALL_ADDONS_KEY = 'ALL';
@@ -19,10 +19,15 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
     const { core } = useServices();
     const platform = usePlatform();
     const profile = useProfile();
+    const [streamFilteringEnabled] = useLocalStorage('stream_filtering_enabled', false);
     const streamsContainerRef = React.useRef(null);
     const [selectedAddon, setSelectedAddon] = React.useState(ALL_ADDONS_KEY);
+    const [selectedQuality, setSelectedQuality] = React.useState('ALL');
+    const [searchText, setSearchText] = React.useState('');
     const onAddonSelected = React.useCallback((value) => {
-        streamsContainerRef.current.scrollTo({ top: 0, left: 0, behavior: platform.name === 'ios' ? 'smooth' : 'instant' });
+        if (streamsContainerRef.current) {
+            streamsContainerRef.current.scrollTo({ top: 0, left: 0, behavior: platform.name === 'ios' ? 'smooth' : 'instant' });
+        }
         setSelectedAddon(value);
     }, [platform]);
     const showInstallAddonsButton = React.useMemo(() => {
@@ -67,6 +72,42 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
             }, {});
     }, [props.streams]);
     const filteredStreams = React.useMemo(() => {
+        // Apply addon filter first
+        let streams = selectedAddon === ALL_ADDONS_KEY ?
+            Object.values(streamsByAddon).map(({ streams }) => streams).flat(1)
+            :
+            streamsByAddon[selectedAddon] ?
+                streamsByAddon[selectedAddon].streams
+                :
+                [];
+
+        // Apply quality/search filters only if enabled
+        if (streamFilteringEnabled) {
+            // Quality filter
+            if (selectedQuality !== 'ALL') {
+                streams = streams.filter((stream) => {
+                    const quality = extractStreamQuality(stream.description);
+                    return quality === selectedQuality;
+                });
+            }
+
+            // Search filter
+            if (searchText.trim().length > 0) {
+                const searchLower = searchText.toLowerCase();
+                streams = streams.filter((stream) => {
+                    const description = stream.description || '';
+                    const name = stream.name || '';
+                    return description.toLowerCase().includes(searchLower) ||
+                           name.toLowerCase().includes(searchLower);
+                });
+            }
+        }
+
+        return streams;
+    }, [streamsByAddon, selectedAddon, selectedQuality, searchText, streamFilteringEnabled]);
+
+    // Check if there are streams before quality/search filtering (to distinguish "no results from filter" vs "still loading")
+    const streamsBeforeFiltering = React.useMemo(() => {
         return selectedAddon === ALL_ADDONS_KEY ?
             Object.values(streamsByAddon).map(({ streams }) => streams).flat(1)
             :
@@ -75,6 +116,10 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                 :
                 [];
     }, [streamsByAddon, selectedAddon]);
+
+    const isFilterActive = streamFilteringEnabled && (selectedQuality !== 'ALL' || searchText.trim().length > 0);
+    const noResultsDueToFilter = isFilterActive && streamsBeforeFiltering.length > 0 && filteredStreams.length === 0;
+
     const selectableOptions = React.useMemo(() => {
         return {
             options: [
@@ -93,6 +138,34 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
             onSelect: onAddonSelected
         };
     }, [streamsByAddon, selectedAddon]);
+
+    const qualitySelectableOptions = React.useMemo(() => {
+        return {
+            options: [
+                {
+                    value: 'ALL',
+                    label: t('ALL_QUALITIES'),
+                    title: t('ALL_QUALITIES')
+                },
+                ...CONSTANTS.STREAM_QUALITY_OPTIONS.map((quality) => ({
+                    value: quality,
+                    label: quality,
+                    title: quality,
+                }))
+            ],
+            value: selectedQuality,
+            onSelect: (value) => {
+                if (streamsContainerRef.current) {
+                    streamsContainerRef.current.scrollTo({ top: 0, left: 0, behavior: platform.name === 'ios' ? 'smooth' : 'instant' });
+                }
+                setSelectedQuality(value);
+            }
+        };
+    }, [selectedQuality, platform]);
+
+    const onSearchChange = React.useCallback((event) => {
+        setSearchText(event.target.value);
+    }, []);
 
     const handleEpisodePicker = React.useCallback((season, episode) => {
         onEpisodeSearch(season, episode);
@@ -124,6 +197,23 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                         null
                 }
             </div>
+            {
+                streamFilteringEnabled && Object.keys(streamsByAddon).length > 0 ?
+                    <div className={styles['filter-row']}>
+                        <MultiselectMenu
+                            {...qualitySelectableOptions}
+                            className={styles['quality-select']}
+                        />
+                        <SearchBar
+                            className={styles['search-bar']}
+                            title={t('SEARCH_STREAMS')}
+                            value={searchText}
+                            onChange={onSearchChange}
+                        />
+                    </div>
+                    :
+                    null
+            }
             {
                 props.streams.length === 0 ?
                     <div className={styles['message-container']}>
@@ -162,10 +252,16 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                         </div>
                         :
                         filteredStreams.length === 0 ?
-                            <div className={styles['streams-container']}>
-                                <Stream.Placeholder />
-                                <Stream.Placeholder />
-                            </div>
+                            noResultsDueToFilter ?
+                                <div className={styles['message-container']}>
+                                    <Image className={styles['image']} src={require('/images/empty.png')} alt={' '} />
+                                    <div className={styles['label']}>{t('NO_STREAM')}</div>
+                                </div>
+                                :
+                                <div className={styles['streams-container']}>
+                                    <Stream.Placeholder />
+                                    <Stream.Placeholder />
+                                </div>
                             :
                             <React.Fragment>
                                 {
