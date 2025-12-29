@@ -8,7 +8,9 @@ const { ShortcutsProvider, useShortcuts } = require('./Shortcuts');
 const comparatorWithPriorities = require('./comparatorWithPriorities');
 const CONSTANTS = require('./CONSTANTS');
 const { withCoreSuspender, useCoreSuspender } = require('./CoreSuspender');
+const extractStreamQuality = require('./extractStreamQuality');
 const getVisibleChildrenRange = require('./getVisibleChildrenRange');
+const useLocalStorage = require('./useLocalStorage');
 const interfaceLanguages = require('./interfaceLanguages.json');
 const languageNames = require('./languageNames.json');
 const languages = require('./languages');
@@ -46,7 +48,9 @@ module.exports = {
     CONSTANTS,
     withCoreSuspender,
     useCoreSuspender,
+    extractStreamQuality,
     getVisibleChildrenRange,
+    useLocalStorage,
     interfaceLanguages,
     languageNames,
     languages,
