@@ -8,6 +8,7 @@ const events = new EventEmitter();
 enum ShellEventType {
     SIGNAL = 1,
     INVOKE_METHOD = 6,
+    DISCORD_EVENT = 7,
 }
 
 type ShellEvent = {
@@ -55,6 +56,18 @@ const useShell = () => {
         }
     };
 
+    const sendDiscord = (method: string, ...args: string[]) => {
+        try {
+            transport?.postMessage(JSON.stringify({
+                id: createId(),
+                type: ShellEventType.DISCORD_EVENT,
+                args: [method, ...args],
+            }));
+        } catch (e) {
+            console.error('Shell', 'Failed to send Discord event', e);
+        }
+    };
+
     useEffect(() => {
         const onWindowVisibilityChanged = (data: WindowVisibility) => {
             setWindowClosed(data.visible === false && data.visibility === 0);
@@ -95,6 +108,7 @@ const useShell = () => {
     return {
         active: !!transport,
         send,
+        sendDiscord,
         on,
         off,
         windowClosed,

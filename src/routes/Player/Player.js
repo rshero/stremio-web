@@ -597,6 +597,63 @@ const Player = ({ urlParams, queryParams }) => {
         navigator.mediaSession.setActionHandler('nexttrack', nexVideoCallback);
     }, [player.nextVideo, onPlayRequested, onPauseRequested, onNextVideoRequested]);
 
+    // Discord Rich Presence
+    React.useEffect(() => {
+        if (!shell.active || !shell.sendDiscord || !player.selected || !player.metaItem || player.metaItem.type !== 'Ready' || !video.state.duration) {
+            return;
+        }
+
+        const metaItem = player.metaItem.content;
+        const videoType = metaItem.type === 'movie' ? 'movie' : 'series';
+        const title = metaItem.name || '';
+
+        let season = '';
+        let episode = '';
+        let episodeName = '';
+        let episodeThumbnail = '';
+
+        if (videoType === 'series' && player.selected.streamRequest?.path?.id) {
+            const videoId = player.selected.streamRequest.path.id;
+            const seasonEpisodeMatch = videoId.match(/(\d+):(\d+)/);
+
+            if (seasonEpisodeMatch) {
+                season = seasonEpisodeMatch[1];
+                episode = seasonEpisodeMatch[2];
+
+                const currentEpisode = metaItem.videos.find(v => v.season === parseInt(season) && v.episode === parseInt(episode));
+                if (currentEpisode) {
+                    episodeName = currentEpisode.title || '';
+                    episodeThumbnail = currentEpisode.thumbnail || '';
+                }
+            }
+        }
+
+        const mainThumbnail = metaItem.poster || metaItem.background || '';
+        const elapsedSeconds = Math.floor((video.state.time / 1000) || 0);
+        const durationSeconds = Math.floor((video.state.duration / 1000) || 0);
+        const isPaused = video.state.paused ? 'yes' : 'no';
+
+        const imdbLink = metaItem.links?.find(link => link.category === 'imdb')?.url || '';
+        const stremioLink = metaItem.links?.find(link => link.category === 'share')?.url || '';
+
+        shell.sendDiscord(
+            'discord-presence',
+            'watching',
+            videoType,
+            title,
+            season,
+            episode,
+            episodeName,
+            episodeThumbnail,
+            mainThumbnail,
+            elapsedSeconds.toString(),
+            durationSeconds.toString(),
+            isPaused,
+            imdbLink,
+            stremioLink
+        );
+    }, [shell, player.selected, player.metaItem, video.state.time, video.state.duration, video.state.paused]);
+
     React.useLayoutEffect(() => {
         const onKeyDown = (event) => {
             switch (event.code) {

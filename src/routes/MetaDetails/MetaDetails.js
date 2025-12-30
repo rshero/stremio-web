@@ -5,7 +5,7 @@ const { useTranslation } = require('react-i18next');
 const PropTypes = require('prop-types');
 const classnames = require('classnames');
 const { useServices } = require('stremio/services');
-const { withCoreSuspender } = require('stremio/common');
+const { withCoreSuspender, useShell } = require('stremio/common');
 const { VerticalNavBar, HorizontalNavBar, DelayedRenderer, Image, MetaPreview, ModalDialog } = require('stremio/components');
 const StreamsList = require('./StreamsList');
 const VideosList = require('./VideosList');
@@ -17,6 +17,7 @@ const styles = require('./styles');
 const MetaDetails = ({ urlParams, queryParams }) => {
     const { t } = useTranslation();
     const { core } = useServices();
+    const shell = useShell();
     const metaDetails = useMetaDetails(urlParams);
     const [season, setSeason] = useSeason(urlParams, queryParams);
     const [tabs, metaExtension, clearMetaExtension] = useMetaExtensionTabs(metaDetails.metaExtensions);
@@ -84,6 +85,26 @@ const MetaDetails = ({ urlParams, queryParams }) => {
         const searchVideoPath = url.replace(encodeURIComponent(urlParams.videoId), searchVideoHash);
         window.location = searchVideoPath;
     }, [urlParams, window.location]);
+
+    // Discord Rich Presence for meta detail view
+    React.useEffect(() => {
+        if (!shell.active || !shell.sendDiscord || !metaDetails.metaItem || metaDetails.metaItem.content.type !== 'Ready') {
+            return;
+        }
+
+        const metaItem = metaDetails.metaItem.content.content;
+        const videoType = metaItem.type === 'movie' ? 'movie' : 'series';
+        const title = metaItem.name || '';
+        const imageUrl = metaItem.poster || metaItem.background || '';
+
+        shell.sendDiscord(
+            'discord-presence',
+            'meta-detail',
+            videoType,
+            title,
+            imageUrl
+        );
+    }, [shell, metaDetails.metaItem]);
 
     const renderBackgroundImageFallback = React.useCallback(() => null, []);
     const renderBackground = React.useMemo(() => !!(
