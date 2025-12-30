@@ -1,0 +1,48 @@
+name: Auto Rebase from Upstream
+
+on:
+  # Run daily at 2 AM UTC
+  schedule:
+    - cron: '0 2 * * *'
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  rebase:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: development
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/Stremio/stremio-web.git || true
+          git fetch upstream
+
+      - name: Rebase on upstream development
+        run: |
+          git rebase upstream/development
+        continue-on-error: false
+
+      - name: Push changes
+        run: |
+          git push origin development --force-with-lease
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::warning::Auto-rebase failed. Manual intervention required."
+          echo "There may be merge conflicts that need to be resolved manually."
