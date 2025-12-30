@@ -142,8 +142,8 @@ const Player = forwardRef<HTMLDivElement, Props>(({ profile }: Props, ref) => {
                     </Option>
                 )}
             </Category>
-            <Category icon={'filter'} label={'SETTINGS_SECTION_STREAMS'}>
-                <Option label={'SETTINGS_ENABLE_STREAM_FILTERING'}>
+            <Category icon={'filter'} label={'Streams'}>
+                <Option label={'Enable stream filtering'}>
                     <Toggle tabIndex={-1} {...streamFilteringToggle} />
                 </Option>
             </Category>

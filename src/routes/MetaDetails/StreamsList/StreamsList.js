@@ -144,8 +144,8 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
             options: [
                 {
                     value: 'ALL',
-                    label: t('ALL_QUALITIES'),
-                    title: t('ALL_QUALITIES')
+                    label: 'All Qualities',
+                    title: 'All Qualities'
                 },
                 ...CONSTANTS.STREAM_QUALITY_OPTIONS.map((quality) => ({
                     value: quality,
@@ -206,7 +206,7 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                         />
                         <SearchBar
                             className={styles['search-bar']}
-                            title={t('SEARCH_STREAMS')}
+                            title={'Search streams...'}
                             value={searchText}
                             onChange={onSearchChange}
                         />
