@@ -1,9 +1,9 @@
 name: Auto Rebase from Upstream
 
 on:
-  # Run daily at 2 AM UTC
+  # Run weekly on Sundays at 2 AM UTC
   schedule:
-    - cron: '0 2 * * *'
+    - cron: "0 2 * * 0"
 
   # Allow manual trigger
   workflow_dispatch:
