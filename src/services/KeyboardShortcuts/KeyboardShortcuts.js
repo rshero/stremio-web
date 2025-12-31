@@ -18,26 +18,27 @@ function KeyboardShortcuts() {
                 window.location = '#/search';
                 break;
             }
-            case 'Digit1': {
-                event.preventDefault();
-                window.location = '#/';
-                break;
-            }
-            case 'Digit2': {
-                event.preventDefault();
-                window.location = '#/discover';
-                break;
-            }
-            case 'Digit3': {
-                event.preventDefault();
-                window.location = '#/library';
-                break;
-            }
-            case 'Digit4': {
-                event.preventDefault();
-                window.location = '#/calendar';
-                break;
-            }
+            // Disabled to allow MPV shortcuts to work (Ctrl+1-4 for Anime4K)
+            // case 'Digit1': {
+            //     event.preventDefault();
+            //     window.location = '#/';
+            //     break;
+            // }
+            // case 'Digit2': {
+            //     event.preventDefault();
+            //     window.location = '#/discover';
+            //     break;
+            // }
+            // case 'Digit3': {
+            //     event.preventDefault();
+            //     window.location = '#/library';
+            //     break;
+            // }
+            // case 'Digit4': {
+            //     event.preventDefault();
+            //     window.location = '#/calendar';
+            //     break;
+            // }
             case 'Digit5': {
                 event.preventDefault();
                 window.location = '#/addons';

@@ -6,7 +6,7 @@
             {
                 "name": "navigateTabs",
                 "label": "SETTINGS_SHORTCUT_NAVIGATE_MENUS",
-                "combos": [["1", "2", "3", "4", "5", "6"]]
+                "combos": [["5", "6"]]
             },
             {
                 "name": "navigateSearch",
@@ -63,26 +63,6 @@
                 "name": "subtitlesSize",
                 "label": "SETTINGS_SHORTCUT_SUBTITLES_SIZE",
                 "combos": [["-"], ["="]]
-            },
-            {
-                "name": "subtitlesDelay",
-                "label": "SETTINGS_SHORTCUT_SUBTITLES_DELAY",
-                "combos": [["G"], ["H"]]
-            },
-            {
-                "name": "subtitlesMenu",
-                "label": "SETTINGS_SHORTCUT_MENU_SUBTITLES",
-                "combos": [["S"]]
-            },
-            {
-                "name": "audioMenu",
-                "label": "SETTINGS_SHORTCUT_MENU_AUDIO",
-                "combos": [["A"]]
-            },
-            {
-                "name": "infoMenu",
-                "label": "SETTINGS_SHORTCUT_MENU_INFO",
-                "combos": [["I"]]
             }
         ]
     }
