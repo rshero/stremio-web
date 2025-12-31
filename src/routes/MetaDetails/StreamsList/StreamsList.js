@@ -198,7 +198,7 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                 }
             </div>
             {
-                streamFilteringEnabled && Object.keys(streamsByAddon).length > 0 ?
+                streamFilteringEnabled && Object.keys(streamsByAddon).length > 0 && countLoadingAddons === 0 ?
                     <div className={styles['filter-row']}>
                         <MultiselectMenu
                             {...qualitySelectableOptions}
