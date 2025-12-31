@@ -701,55 +701,56 @@ const Player = ({ urlParams, queryParams }) => {
 
                     break;
                 }
-                case 'KeyS': {
-                    closeMenus();
-                    if ((Array.isArray(video.state.subtitlesTracks) && video.state.subtitlesTracks.length > 0) ||
-                        (Array.isArray(video.state.extraSubtitlesTracks) && video.state.extraSubtitlesTracks.length > 0)) {
-                        toggleSubtitlesMenu();
-                    }
+                // Disabled to allow MPV shortcuts to work
+                // case 'KeyS': {
+                //     closeMenus();
+                //     if ((Array.isArray(video.state.subtitlesTracks) && video.state.subtitlesTracks.length > 0) ||
+                //         (Array.isArray(video.state.extraSubtitlesTracks) && video.state.extraSubtitlesTracks.length > 0)) {
+                //         toggleSubtitlesMenu();
+                //     }
 
-                    break;
-                }
-                case 'KeyA': {
-                    closeMenus();
-                    if (Array.isArray(video.state.audioTracks) && video.state.audioTracks.length > 0) {
-                        toggleAudioMenu();
-                    }
+                //     break;
+                // }
+                // case 'KeyA': {
+                //     closeMenus();
+                //     if (Array.isArray(video.state.audioTracks) && video.state.audioTracks.length > 0) {
+                //         toggleAudioMenu();
+                //     }
 
-                    break;
-                }
-                case 'KeyI': {
-                    closeMenus();
-                    if (player.metaItem !== null && player.metaItem.type === 'Ready') {
-                        toggleSideDrawer();
-                    }
+                //     break;
+                // }
+                // case 'KeyI': {
+                //     closeMenus();
+                //     if (player.metaItem !== null && player.metaItem.type === 'Ready') {
+                //         toggleSideDrawer();
+                //     }
 
-                    break;
-                }
-                case 'KeyR': {
-                    closeMenus();
-                    if (video.state.playbackSpeed !== null) {
-                        toggleSpeedMenu();
-                    }
+                //     break;
+                // }
+                // case 'KeyR': {
+                //     closeMenus();
+                //     if (video.state.playbackSpeed !== null) {
+                //         toggleSpeedMenu();
+                //     }
 
-                    break;
-                }
-                case 'KeyD': {
-                    closeMenus();
-                    if (streamingServer.statistics !== null && streamingServer.statistics.type !== 'Err' && player.selected && typeof player.selected.stream.infoHash === 'string' && typeof player.selected.stream.fileIdx === 'number') {
-                        toggleStatisticsMenu();
-                    }
+                //     break;
+                // }
+                // case 'KeyD': {
+                //     closeMenus();
+                //     if (streamingServer.statistics !== null && streamingServer.statistics.type !== 'Err' && player.selected && typeof player.selected.stream.infoHash === 'string' && typeof player.selected.stream.fileIdx === 'number') {
+                //         toggleStatisticsMenu();
+                //     }
 
-                    break;
-                }
-                case 'KeyG': {
-                    onDecreaseSubtitlesDelay();
-                    break;
-                }
-                case 'KeyH': {
-                    onIncreaseSubtitlesDelay();
-                    break;
-                }
+                //     break;
+                // }
+                // case 'KeyG': {
+                //     onDecreaseSubtitlesDelay();
+                //     break;
+                // }
+                // case 'KeyH': {
+                //     onIncreaseSubtitlesDelay();
+                //     break;
+                // }
                 case 'Minus': {
                     onUpdateSubtitlesSize(-1);
                     break;
