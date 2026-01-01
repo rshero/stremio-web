@@ -6,6 +6,7 @@ const classnames = require('classnames');
 const { useRouteFocused } = require('stremio-router');
 const useAnimationFrame = require('stremio/common/useAnimationFrame');
 const useLiveRef = require('stremio/common/useLiveRef');
+const { useServices } = require('stremio/services');
 const styles = require('./styles');
 
 const Slider = ({ className, value, buffered, minimumValue, maximumValue, disabled, onSlide, onComplete, audioBoost }) => {
@@ -17,6 +18,7 @@ const Slider = ({ className, value, buffered, minimumValue, maximumValue, disabl
     const onCompleteRef = useLiveRef(onComplete);
     const sliderContainerRef = React.useRef(null);
     const routeFocused = useRouteFocused();
+    const { shell } = useServices();
     const [requestThumbAnimation, cancelThumbAnimation] = useAnimationFrame();
     const calculateValueForMouseX = React.useCallback((mouseX) => {
         if (sliderContainerRef.current === null) {
@@ -124,6 +126,31 @@ const Slider = ({ className, value, buffered, minimumValue, maximumValue, disabl
             releaseThumb();
         }
     }, [routeFocused, disabled]);
+    const onHoverMove = React.useCallback((event) => {
+        if (!shell.active || !className || !className.includes('slider')) {
+            return;
+        }
+
+        const timestamp = calculateValueForMouseX(event.clientX) / 1000; // Convert ms to seconds
+        const x = event.clientX;
+        const y = event.clientY;
+
+        // Send to shell for thumbfast
+        shell.transport.send('seek-hover', [
+            timestamp.toString(),
+            x.toString(),
+            y.toString()
+        ]);
+    }, [calculateValueForMouseX, className, shell]);
+
+    const onHoverLeave = React.useCallback(() => {
+        if (!shell.active || !className || !className.includes('slider')) {
+            return;
+        }
+
+        shell.transport.send('seek-leave', {});
+    }, [className, shell]);
+
     React.useLayoutEffect(() => {
         return () => {
             releaseThumb();
@@ -132,7 +159,14 @@ const Slider = ({ className, value, buffered, minimumValue, maximumValue, disabl
     const thumbPosition = Math.max(0, Math.min(1, (valueRef.current - minimumValueRef.current) / (maximumValueRef.current - minimumValueRef.current)));
     const bufferedPosition = Math.max(0, Math.min(1, (bufferedRef.current - minimumValueRef.current) / (maximumValueRef.current - minimumValueRef.current)));
     return (
-        <div ref={sliderContainerRef} className={classnames(className, styles['slider-container'], { 'disabled': disabled })} onMouseDown={onMouseDown} onTouchStart={onTouchStart}>
+        <div
+            ref={sliderContainerRef}
+            className={classnames(className, styles['slider-container'], { 'disabled': disabled })}
+            onMouseDown={onMouseDown}
+            onTouchStart={onTouchStart}
+            onMouseMove={onHoverMove}
+            onMouseLeave={onHoverLeave}
+        >
             <div className={styles['layer']}>
                 <div className={classnames(styles['track'], { [styles['audio-boost']]: audioBoost })} />
             </div>
