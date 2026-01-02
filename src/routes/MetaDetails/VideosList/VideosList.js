@@ -6,9 +6,11 @@ const classnames = require('classnames');
 const { t } = require('i18next');
 const { useServices } = require('stremio/services');
 const { useProfile } = require('stremio/common');
-const { Image, SearchBar, Toggle, Video } = require('stremio/components');
+const { Image, SearchBar, Toggle, Video, Button, MultiselectMenu } = require('stremio/components');
+const { default: Icon } = require('@stremio/stremio-icons/react');
 const SeasonsBar = require('./SeasonsBar');
 const { default: EpisodePicker } = require('../EpisodePicker');
+const { default: useBatchDownload } = require('./useBatchDownload');
 const styles = require('./styles');
 
 const VideosList = ({ className, metaItem, libraryItem, season, seasonOnSelect, selectedVideoId, toggleNotifications }) => {
@@ -17,6 +19,18 @@ const VideosList = ({ className, metaItem, libraryItem, season, seasonOnSelect, 
 
     const showNotificationsToggle = React.useMemo(() => {
         return metaItem?.content?.content?.inLibrary && metaItem?.content?.content?.videos?.length;
+    }, [metaItem]);
+
+    // Batch download hook - extract metaItem content for the hook
+    const metaItemForDownload = React.useMemo(() => {
+        if (metaItem?.content?.type === 'Ready') {
+            return {
+                id: metaItem.content.content.id,
+                type: metaItem.content.content.type,
+                videos: metaItem.content.content.videos,
+            };
+        }
+        return { videos: [] };
     }, [metaItem]);
     const videos = React.useMemo(() => {
         return metaItem && metaItem.content.type === 'Ready' ?
@@ -75,6 +89,41 @@ const VideosList = ({ className, metaItem, libraryItem, season, seasonOnSelect, 
     const searchInputOnChange = React.useCallback((event) => {
         setSearch(event.currentTarget.value);
     }, []);
+
+    // Batch download
+    const {
+        releaseName,
+        setReleaseName,
+        selectedAddon,
+        setSelectedAddon,
+        availableAddons,
+        isDownloading,
+        currentEpisode,
+        totalEpisodes,
+        completedEpisodes,
+        downloadResults,
+        showResults,
+        startBatchDownload,
+        cancelDownload,
+        clearResults,
+        openAllDownloads,
+    } = useBatchDownload({
+        metaItem: metaItemForDownload,
+        season: selectedSeason,
+    });
+
+    const onReleaseNameChange = React.useCallback((event) => {
+        setReleaseName(event.currentTarget.value);
+    }, [setReleaseName]);
+
+    const onAddonSelect = React.useCallback((value) => {
+        setSelectedAddon(value);
+    }, [setSelectedAddon]);
+
+    const selectedAddonLabel = React.useMemo(() => {
+        const found = availableAddons.find((a) => a.value === selectedAddon);
+        return found?.label || 'Select Addon';
+    }, [availableAddons, selectedAddon]);
 
     const onMarkVideoAsWatched = (video, watched) => {
         core.transport.dispatch({
@@ -154,6 +203,83 @@ const VideosList = ({ className, metaItem, libraryItem, season, seasonOnSelect, 
                                 value={search}
                                 onChange={searchInputOnChange}
                             />
+                            <div className={styles['batch-download-section']}>
+                                <div className={styles['batch-download-row']}>
+                                    <input
+                                        className={styles['release-input']}
+                                        type="text"
+                                        placeholder={'Release name...'}
+                                        value={releaseName}
+                                        onChange={onReleaseNameChange}
+                                        disabled={isDownloading}
+                                    />
+                                    <MultiselectMenu
+                                        className={styles['addon-select']}
+                                        title={selectedAddonLabel}
+                                        options={availableAddons}
+                                        value={selectedAddon}
+                                        disabled={isDownloading || availableAddons.length === 0}
+                                        onSelect={onAddonSelect}
+                                    />
+                                    {isDownloading ? (
+                                        <Button className={styles['action-button']} onClick={cancelDownload}>
+                                            <Icon className={styles['icon']} name={'close'} />
+                                            <div className={styles['label']}>{'Cancel'}</div>
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            className={classnames(styles['action-button'], { 'disabled': !releaseName.trim() })}
+                                            onClick={startBatchDownload}
+                                        >
+                                            <Icon className={styles['icon']} name={'download'} />
+                                            <div className={styles['label']}>{'Fetch'}</div>
+                                        </Button>
+                                    )}
+                                </div>
+                                {isDownloading && (
+                                    <div className={styles['download-progress']}>
+                                        <div className={styles['progress-text']}>
+                                            {`Fetching episode ${currentEpisode} (${completedEpisodes}/${totalEpisodes})`}
+                                        </div>
+                                        <div className={styles['progress-bar-container']}>
+                                            <div
+                                                className={styles['progress-bar']}
+                                                style={{ width: `${(completedEpisodes / totalEpisodes) * 100}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                                {showResults && downloadResults.length > 0 && (
+                                    <div className={styles['download-results']}>
+                                        <div className={styles['results-header']}>
+                                            <span className={styles['results-count']}>{`Found ${downloadResults.length} episodes`}</span>
+                                            <div className={styles['results-actions']}>
+                                                <Button className={styles['action-button']} onClick={openAllDownloads}>
+                                                    <Icon className={styles['icon']} name={'download'} />
+                                                    <div className={styles['label']}>{'Download All'}</div>
+                                                </Button>
+                                                <Button className={styles['close-button']} onClick={clearResults}>
+                                                    <Icon className={styles['icon']} name={'close'} />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                        <div className={styles['results-list']}>
+                                            {downloadResults.map((result) => (
+                                                <a
+                                                    key={result.episode}
+                                                    className={styles['result-item']}
+                                                    href={result.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    <span className={styles['episode-number']}>E{result.episode}</span>
+                                                    <span className={styles['episode-title']}>{result.filename || result.title}</span>
+                                                </a>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                             <div className={styles['videos-container']}>
                                 {
                                     videosForSeason
