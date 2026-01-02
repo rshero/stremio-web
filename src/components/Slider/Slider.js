@@ -7,6 +7,7 @@ const { useRouteFocused } = require('stremio-router');
 const useAnimationFrame = require('stremio/common/useAnimationFrame');
 const useLiveRef = require('stremio/common/useLiveRef');
 const styles = require('./styles');
+const {useServices} = require('stremio/services');
 
 const Slider = ({ className, value, buffered, minimumValue, maximumValue, disabled, onSlide, onComplete, audioBoost }) => {
     const minimumValueRef = useLiveRef(minimumValue !== null && !isNaN(minimumValue) ? minimumValue : 0);
@@ -17,6 +18,7 @@ const Slider = ({ className, value, buffered, minimumValue, maximumValue, disabl
     const onCompleteRef = useLiveRef(onComplete);
     const sliderContainerRef = React.useRef(null);
     const routeFocused = useRouteFocused();
+    const { shell } = useServices();
     const [requestThumbAnimation, cancelThumbAnimation] = useAnimationFrame();
     const calculateValueForMouseX = React.useCallback((mouseX) => {
         if (sliderContainerRef.current === null) {
@@ -119,6 +121,28 @@ const Slider = ({ className, value, buffered, minimumValue, maximumValue, disabl
 
         releaseThumb();
     }, []);
+
+    const handleMouseMove = React.useCallback((event) => {
+        // Only enable thumbfast for timeline sliders (not volume sliders)
+        if (shell.active && className && className.includes('slider') && !className.includes('volume')) {
+            const hoveredSeconds = calculateValueForMouseX(event.clientX) / 1000;
+            const x = event.clientX;
+            const y = event.clientY;
+            shell.transport.send('seek-hover', [
+                hoveredSeconds.toString(),
+                x.toString(),
+                y.toString()
+            ]);
+        }
+    }, [calculateValueForMouseX, shell, className]);
+
+    const handleMouseLeave = React.useCallback(() => {
+        // Only enable thumbfast for timeline sliders (not volume sliders)
+        if (shell.active && className && className.includes('slider') && !className.includes('volume')) {
+            shell.transport.send('seek-leave', {});
+        }
+    }, [shell, className]);
+
     React.useLayoutEffect(() => {
         if (!routeFocused || disabled) {
             releaseThumb();
@@ -136,6 +160,8 @@ const Slider = ({ className, value, buffered, minimumValue, maximumValue, disabl
             ref={sliderContainerRef}
             className={classnames(className, styles['slider-container'], { 'disabled': disabled })}
             onMouseDown={onMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
             onTouchStart={onTouchStart}
         >
             <div className={styles['layer']}>
