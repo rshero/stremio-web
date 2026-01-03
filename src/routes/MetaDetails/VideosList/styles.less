@@ -73,7 +73,7 @@
         margin: 0 1.5rem 1rem 1.5rem;
         overflow: visible;
         position: relative;
-        z-index: 5;
+        z-index: 100;
 
         .batch-download-row {
             display: flex;
@@ -115,17 +115,24 @@
                 flex: none;
                 background: none;
                 overflow: visible;
+                z-index: 1000;
+
+                :global(.dropdown) {
+                    z-index: 1001;
+                }
             }
 
-            // Fetch button - icon only
+            // Match SeasonsBar button styling
             .action-button {
                 flex: none;
                 display: flex;
+                flex-direction: row;
                 align-items: center;
                 justify-content: center;
                 width: 3rem;
                 height: 3rem;
                 border-radius: 50%;
+                padding: 0;
 
                 &.disabled {
                     pointer-events: none;
@@ -134,10 +141,27 @@
 
                 &:hover, &:focus {
                     background-color: var(--overlay-color);
+
+                    .label {
+                        max-width: 5rem;
+                        margin-left: 0.5rem;
+                        opacity: 1;
+                    }
+
+                    width: auto;
+                    border-radius: 3rem;
+                    padding: 0 1rem;
                 }
 
                 .label {
-                    display: none;
+                    max-width: 0;
+                    overflow: hidden;
+                    white-space: nowrap;
+                    font-weight: 500;
+                    color: var(--primary-foreground-color);
+                    margin-left: 0;
+                    opacity: 0;
+                    transition: max-width 0.2s ease, opacity 0.2s ease, margin-left 0.2s ease;
                 }
 
                 .icon {
