@@ -1,0 +1,78 @@
+name: Sync with Upstream
+
+on:
+  # Run weekly on Sundays at 2 AM UTC
+  schedule:
+    - cron: "0 2 * * 0"
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: development
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/Stremio/stremio-web.git || true
+          git fetch upstream
+
+      - name: Check for updates
+        id: check
+        run: |
+          git merge-base --is-ancestor upstream/development HEAD && echo "up-to-date=true" >> $GITHUB_OUTPUT || echo "up-to-date=false" >> $GITHUB_OUTPUT
+
+      - name: Create sync branch
+        if: steps.check.outputs.up-to-date == 'false'
+        run: |
+          BRANCH_NAME="sync-upstream-$(date +%Y%m%d-%H%M%S)"
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+          git checkout -b $BRANCH_NAME
+
+      - name: Merge upstream changes
+        if: steps.check.outputs.up-to-date == 'false'
+        run: |
+          git merge upstream/development -m "chore: sync with upstream development"
+        continue-on-error: false
+
+      - name: Push sync branch
+        if: steps.check.outputs.up-to-date == 'false'
+        run: |
+          git push origin $BRANCH_NAME
+
+      - name: Create Pull Request
+        if: steps.check.outputs.up-to-date == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --title "chore: sync with upstream development" \
+            --body "This PR merges the latest changes from [Stremio/stremio-web](https://github.com/Stremio/stremio-web) upstream repository.
+
+          **Changes:** Automated sync from upstream development branch.
+
+          Please review and merge if everything looks good." \
+            --base development \
+            --head $BRANCH_NAME
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::warning::Upstream sync failed. Manual intervention required."
+          echo "There may be merge conflicts that need to be resolved manually."
