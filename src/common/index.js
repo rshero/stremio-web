@@ -32,6 +32,7 @@ const useTorrent = require('./useTorrent');
 const useTranslate = require('./useTranslate');
 const { default: useOrientation } = require('./useOrientation');
 const { default: useLanguageSorting } = require('./useLanguageSorting');
+const { default: useTheme } = require('./useTheme');
 
 module.exports = {
     FileDropProvider,
@@ -72,4 +73,5 @@ module.exports = {
     useTranslate,
     useOrientation,
     useLanguageSorting,
+    useTheme,
 };
