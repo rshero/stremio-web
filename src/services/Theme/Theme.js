@@ -5,6 +5,7 @@ const EventEmitter = require('eventemitter3');
 const STORAGE_KEY = 'stremio_web_theme_url';
 const STYLE_ELEMENT_ID = 'stremio-custom-theme';
 const FETCH_TIMEOUT = 10000; // 10 second timeout for fetching CSS
+const SHELL_IPC_TIMEOUT = 2000; // 2 second timeout for shell IPC
 
 /**
  * Theme service that handles loading and applying custom CSS themes.
@@ -114,6 +115,38 @@ function Theme() {
         }
     };
 
+    // Load URL from shell storage with timeout
+    const loadFromShell = () => {
+        return new Promise((resolve) => {
+            if (!isShell()) {
+                resolve(null);
+                return;
+            }
+
+            const timeoutId = setTimeout(() => {
+                console.warn('Shell theme settings request timed out');
+                resolve(null);
+            }, SHELL_IPC_TIMEOUT);
+
+            try {
+                window.stremioTheme.getSettings()
+                    .then((settings) => {
+                        clearTimeout(timeoutId);
+                        resolve(settings?.url || null);
+                    })
+                    .catch((e) => {
+                        clearTimeout(timeoutId);
+                        console.warn('Failed to load theme settings from shell:', e);
+                        resolve(null);
+                    });
+            } catch (e) {
+                clearTimeout(timeoutId);
+                console.warn('Failed to call shell getSettings:', e);
+                resolve(null);
+            }
+        });
+    };
+
     function onStateChanged() {
         events.emit('stateChanged');
     }
@@ -203,7 +236,22 @@ function Theme() {
      * Initialize theme service - loads stored theme on startup
      */
     this.init = async function() {
-        const storedUrl = loadStoredUrl();
+        // First try localStorage (fast, synchronous)
+        let storedUrl = loadStoredUrl();
+        
+        // If no localStorage URL and we're in shell, try shell storage
+        if (!storedUrl && isShell()) {
+            storedUrl = await loadFromShell();
+            // Sync to localStorage if found in shell
+            if (storedUrl) {
+                try {
+                    localStorage.setItem(STORAGE_KEY, storedUrl);
+                } catch (e) {
+                    // ignore
+                }
+            }
+        }
+
         if (storedUrl) {
             await this.load(storedUrl);
         }
