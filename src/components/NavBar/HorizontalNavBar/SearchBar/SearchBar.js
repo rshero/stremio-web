@@ -60,17 +60,31 @@ const SearchBar = React.memo(({ className, query, active }) => {
         const value = searchInputRef.current.value;
         setCurrentQuery(value);
         openHistory();
-    }, []);
+        // Handle magnet links pasted via JS injection (e.g., Linux shell Ctrl+V)
+        if (value && value.startsWith('magnet:')) {
+            createTorrentFromMagnet(value);
+            searchInputRef.current.value = '';
+            setCurrentQuery('');
+        }
+    }, [createTorrentFromMagnet]);
 
     const queryInputOnSubmit = React.useCallback((event) => {
         event.preventDefault();
-        const searchValue = `/search?search=${encodeURIComponent(event.target.value)}`;
+        const value = event.target.value;
+        // Don't search for magnet links - they're handled separately
+        if (value && value.startsWith('magnet:')) {
+            createTorrentFromMagnet(value);
+            searchInputRef.current.value = '';
+            setCurrentQuery('');
+            return;
+        }
+        const searchValue = `/search?search=${encodeURIComponent(value)}`;
         setCurrentQuery(searchValue);
         if (searchInputRef.current && searchValue) {
             window.location.hash = searchValue;
             closeHistory();
         }
-    }, []);
+    }, [createTorrentFromMagnet]);
 
     const queryInputClear = React.useCallback(() => {
         searchInputRef.current.value = '';
