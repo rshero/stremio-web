@@ -12,13 +12,24 @@ const useTorrent = () => {
     const toast = useToast();
     const createTorrentTimeout = React.useRef(null);
     const createTorrentFromMagnet = React.useCallback((text) => {
-        const parsed = magnet.decode(text);
-        if (parsed && typeof parsed.infoHash === 'string') {
+        if (typeof text !== 'string' || text.trim().length === 0) {
+            return;
+        }
+
+        const trimmedText = text.trim();
+
+        if (!trimmedText.startsWith('magnet:?')) {
+            return;
+        }
+
+        const parsed = magnet.decode(trimmedText);
+
+        if (parsed && typeof parsed.infoHash === 'string' && parsed.infoHash.length === 40) {
             core.transport.dispatch({
                 action: 'StreamingServer',
                 args: {
                     action: 'CreateTorrent',
-                    args: text
+                    args: trimmedText
                 }
             });
             clearTimeout(createTorrentTimeout.current);

@@ -48,16 +48,19 @@ const SearchBar = React.memo(({ className, query, active }) => {
         };
     }, [searchHistoryOnClose]);
 
+    const queryInputOnPaste = React.useCallback((event) => {
+        const pastedText = event.clipboardData.getData('text');
+        if (pastedText && pastedText.startsWith('magnet:')) {
+            event.preventDefault();
+            createTorrentFromMagnet(pastedText);
+        }
+    }, [createTorrentFromMagnet]);
+
     const queryInputOnChange = React.useCallback(() => {
         const value = searchInputRef.current.value;
         setCurrentQuery(value);
         openHistory();
-        try {
-            createTorrentFromMagnet(value);
-        } catch (error) {
-            console.error('Failed to create torrent from magnet:', error);
-        }
-    }, [createTorrentFromMagnet]);
+    }, []);
 
     const queryInputOnSubmit = React.useCallback((event) => {
         event.preventDefault();
@@ -76,6 +79,10 @@ const SearchBar = React.memo(({ className, query, active }) => {
     }, []);
 
     const updateLocalSearchDebounced = React.useCallback(debounce((query) => {
+        // Skip local search for magnet links and other special URLs
+        if (query && (query.startsWith('magnet:') || query.startsWith('http://') || query.startsWith('https://'))) {
+            return;
+        }
         localSearch.search(query);
     }, 250), []);
 
@@ -108,6 +115,7 @@ const SearchBar = React.memo(({ className, query, active }) => {
                         defaultValue={query}
                         tabIndex={-1}
                         onChange={queryInputOnChange}
+                        onPaste={queryInputOnPaste}
                         onSubmit={queryInputOnSubmit}
                         onClick={openHistory}
                     />
