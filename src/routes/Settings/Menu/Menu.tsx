@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
 import { useServices } from 'stremio/services';
@@ -12,9 +12,20 @@ type Props = {
     onSelect: (event: React.MouseEvent<HTMLDivElement>) => void,
 };
 
+// Fallback for translations not yet in stremio-translations
+const FALLBACK_TRANSLATIONS: Record<string, string> = {
+    'SETTINGS_NAV_APPEARANCE': 'Appearance',
+};
+
 const Menu = ({ selected, streamingServer, onSelect }: Props) => {
-    const { t } = useTranslation();
+    const { t: translate } = useTranslation();
     const { shell } = useServices();
+
+    // Translation helper with fallback
+    const t = useCallback((key: string) => {
+        const translated = translate(key);
+        return translated === key ? (FALLBACK_TRANSLATIONS[key] || key) : translated;
+    }, [translate]);
 
     const settings = useMemo(() => (
         streamingServer?.settings?.type === 'Ready' ?
@@ -25,6 +36,9 @@ const Menu = ({ selected, streamingServer, onSelect }: Props) => {
         <div className={styles['menu']}>
             <Button className={classNames(styles['button'], { [styles['selected']]: selected === SECTIONS.GENERAL })} title={t('SETTINGS_NAV_GENERAL')} data-section={SECTIONS.GENERAL} onClick={onSelect}>
                 { t('SETTINGS_NAV_GENERAL') }
+            </Button>
+            <Button className={classNames(styles['button'], { [styles['selected']]: selected === SECTIONS.APPEARANCE })} title={t('SETTINGS_NAV_APPEARANCE')} data-section={SECTIONS.APPEARANCE} onClick={onSelect}>
+                { t('SETTINGS_NAV_APPEARANCE') }
             </Button>
             <Button className={classNames(styles['button'], { [styles['selected']]: selected === SECTIONS.PLAYER })} title={t('SETTINGS_NAV_PLAYER')} data-section={SECTIONS.PLAYER} onClick={onSelect}>
                 { t('SETTINGS_NAV_PLAYER') }
