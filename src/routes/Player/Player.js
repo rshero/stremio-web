@@ -8,7 +8,7 @@ const langs = require('langs');
 const { useTranslation } = require('react-i18next');
 const { useRouteFocused } = require('stremio-router');
 const { useServices } = require('stremio/services');
-const { onFileDrop, useSettings, useProfile, useFullscreen, useBinaryState, useToast, useStreamingServer, withCoreSuspender, CONSTANTS, useShell, usePlatform } = require('stremio/common');
+const { onFileDrop, useSettings, useProfile, useFullscreen, useBinaryState, useToast, useStreamingServer, withCoreSuspender, CONSTANTS, useShell, usePlatform, useTrackMemory } = require('stremio/common');
 const { HorizontalNavBar, Transition, ContextMenu } = require('stremio/components');
 const BufferingLoader = require('./BufferingLoader');
 const VolumeChangeIndicator = require('./VolumeChangeIndicator');
@@ -45,6 +45,7 @@ const Player = ({ urlParams, queryParams }) => {
     const routeFocused = useRouteFocused();
     const platform = usePlatform();
     const toast = useToast();
+    const { memory: trackMemory, saveTrackSelection } = useTrackMemory(urlParams.id, urlParams.type);
 
     const [seeking, setSeeking] = React.useState(false);
 
@@ -88,6 +89,7 @@ const Player = ({ urlParams, queryParams }) => {
     const nextVideoPopupDismissed = React.useRef(false);
     const defaultSubtitlesSelected = React.useRef(false);
     const defaultAudioTrackSelected = React.useRef(false);
+    const isApplyingDefaultTracks = React.useRef(false);
     const [error, setError] = React.useState(null);
 
     const isNavigating = React.useRef(false);
@@ -224,15 +226,24 @@ const Player = ({ urlParams, queryParams }) => {
 
     const onSubtitlesTrackSelected = React.useCallback((id) => {
         video.setSubtitlesTrack(id);
-    }, []);
+        if (!isApplyingDefaultTracks.current) {
+            saveTrackSelection(video.state.selectedAudioTrackId, id, video.state.selectedExtraSubtitlesTrackId);
+        }
+    }, [video.state.selectedAudioTrackId, video.state.selectedExtraSubtitlesTrackId, saveTrackSelection]);
 
     const onExtraSubtitlesTrackSelected = React.useCallback((id) => {
         video.setExtraSubtitlesTrack(id);
-    }, []);
+        if (!isApplyingDefaultTracks.current) {
+            saveTrackSelection(video.state.selectedAudioTrackId, video.state.selectedSubtitlesTrackId, id);
+        }
+    }, [video.state.selectedAudioTrackId, video.state.selectedSubtitlesTrackId, saveTrackSelection]);
 
     const onAudioTrackSelected = React.useCallback((id) => {
         video.setProp('selectedAudioTrackId', id);
-    }, []);
+        if (!isApplyingDefaultTracks.current) {
+            saveTrackSelection(id, video.state.selectedSubtitlesTrackId, video.state.selectedExtraSubtitlesTrackId);
+        }
+    }, [video.state.selectedSubtitlesTrackId, video.state.selectedExtraSubtitlesTrackId, saveTrackSelection]);
 
     const onExtraSubtitlesDelayChanged = React.useCallback((delay) => {
         video.setProp('extraSubtitlesDelay', delay);
@@ -447,11 +458,38 @@ const Player = ({ urlParams, queryParams }) => {
     React.useEffect(() => {
         if (!defaultSubtitlesSelected.current) {
             const findTrackByLang = (tracks, lang) => tracks.find((track) => track.lang === lang || langs.where('1', track.lang)?.[2] === lang);
+            const findTrackById = (tracks, id) => tracks.find((track) => track.id === id);
 
+            isApplyingDefaultTracks.current = true;
+
+            // Priority 1: Check track memory (per-series remembered selection)
+            if (trackMemory) {
+                if (trackMemory.subtitlesTrackId) {
+                    const savedSub = findTrackById(video.state.subtitlesTracks, trackMemory.subtitlesTrackId);
+                    if (savedSub) {
+                        onSubtitlesTrackSelected(savedSub.id);
+                        defaultSubtitlesSelected.current = true;
+                        isApplyingDefaultTracks.current = false;
+                        return;
+                    }
+                }
+                if (trackMemory.extraSubtitlesTrackId) {
+                    const savedExtraSub = findTrackById(video.state.extraSubtitlesTracks, trackMemory.extraSubtitlesTrackId);
+                    if (savedExtraSub) {
+                        onExtraSubtitlesTrackSelected(savedExtraSub.id);
+                        defaultSubtitlesSelected.current = true;
+                        isApplyingDefaultTracks.current = false;
+                        return;
+                    }
+                }
+            }
+
+            // Priority 2: Global language preference (existing behavior)
             if (settings.subtitlesLanguage === null) {
                 onSubtitlesTrackSelected(null);
                 onExtraSubtitlesTrackSelected(null);
                 defaultSubtitlesSelected.current = true;
+                isApplyingDefaultTracks.current = false;
                 return;
             }
 
@@ -465,20 +503,40 @@ const Player = ({ urlParams, queryParams }) => {
                 onExtraSubtitlesTrackSelected(extraSubtitlesTrack.id);
                 defaultSubtitlesSelected.current = true;
             }
+
+            isApplyingDefaultTracks.current = false;
         }
-    }, [video.state.subtitlesTracks, video.state.extraSubtitlesTracks]);
+    }, [video.state.subtitlesTracks, video.state.extraSubtitlesTracks, trackMemory]);
 
     React.useEffect(() => {
         if (!defaultAudioTrackSelected.current) {
             const findTrackByLang = (tracks, lang) => tracks.find((track) => track.lang === lang || langs.where('1', track.lang)?.[2] === lang);
+            const findTrackById = (tracks, id) => tracks.find((track) => track.id === id);
+
+            isApplyingDefaultTracks.current = true;
+
+            // Priority 1: Check track memory (per-series remembered selection)
+            if (trackMemory?.audioTrackId) {
+                const savedAudio = findTrackById(video.state.audioTracks, trackMemory.audioTrackId);
+                if (savedAudio) {
+                    onAudioTrackSelected(savedAudio.id);
+                    defaultAudioTrackSelected.current = true;
+                    isApplyingDefaultTracks.current = false;
+                    return;
+                }
+            }
+
+            // Priority 2: Global language preference (existing behavior)
             const audioTrack = findTrackByLang(video.state.audioTracks, settings.audioLanguage);
 
             if (audioTrack && audioTrack.id) {
                 onAudioTrackSelected(audioTrack.id);
                 defaultAudioTrackSelected.current = true;
             }
+
+            isApplyingDefaultTracks.current = false;
         }
-    }, [video.state.audioTracks]);
+    }, [video.state.audioTracks, trackMemory]);
 
     React.useEffect(() => {
         defaultSubtitlesSelected.current = false;

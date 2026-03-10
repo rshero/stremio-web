@@ -33,6 +33,7 @@ const useTranslate = require('./useTranslate');
 const { default: useOrientation } = require('./useOrientation');
 const { default: useLanguageSorting } = require('./useLanguageSorting');
 const { default: useTheme } = require('./useTheme');
+const useTrackMemory = require('./useTrackMemory');
 
 module.exports = {
     FileDropProvider,
@@ -74,4 +75,5 @@ module.exports = {
     useOrientation,
     useLanguageSorting,
     useTheme,
+    useTrackMemory,
 };
