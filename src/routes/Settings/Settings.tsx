@@ -8,6 +8,7 @@ import { MainNavBars } from 'stremio/components';
 import { SECTIONS } from './constants';
 import Menu from './Menu';
 import General from './General';
+import Appearance from './Appearance';
 import Interface from './Interface';
 import Player from './Player';
 import Streaming from './Streaming';
@@ -24,12 +25,14 @@ const Settings = () => {
     const sectionsContainerRef = useRef<HTMLDivElement>(null);
     const generalSectionRef = useRef<HTMLDivElement>(null);
     const interfaceSectionRef = useRef<HTMLDivElement>(null);
+    const appearanceSectionRef = useRef<HTMLDivElement>(null);
     const playerSectionRef = useRef<HTMLDivElement>(null);
     const streamingServerSectionRef = useRef<HTMLDivElement>(null);
     const shortcutsSectionRef = useRef<HTMLDivElement>(null);
 
     const sections = useMemo(() => ([
         { ref: generalSectionRef, id: SECTIONS.GENERAL },
+        { ref: appearanceSectionRef, id: SECTIONS.APPEARANCE },
         { ref: interfaceSectionRef, id: SECTIONS.INTERFACE },
         { ref: playerSectionRef, id: SECTIONS.PLAYER },
         { ref: streamingServerSectionRef, id: SECTIONS.STREAMING },
@@ -102,6 +105,7 @@ const Settings = () => {
                         ref={interfaceSectionRef}
                         profile={profile}
                     />
+                    <Appearance ref={appearanceSectionRef} />
                     <Player
                         ref={playerSectionRef}
                         profile={profile}

@@ -6,7 +6,7 @@ const { useTranslation } = require('react-i18next');
 const { useNavigate } = require('react-router');
 const { useCore } = require('stremio/core');
 const { Routes } = require('stremio-router');
-const { Chromecast, ServicesProvider, GamepadProvider } = require('stremio/services');
+const { Chromecast, ServicesProvider, GamepadProvider, Theme } = require('stremio/services');
 const { FullscreenProvider, ToastProvider, TooltipProvider, ShortcutsProvider, DiscordProvider, CONSTANTS, useBinaryState, useProfile, withCoreSuspender, onFileDrop, usePlatform } = require('stremio/common');
 const ServicesToaster = require('./ServicesToaster');
 const SearchParamsHandler = require('./SearchParamsHandler');
@@ -29,6 +29,7 @@ const App = () => {
     const services = React.useMemo(() => {
         return {
             chromecast: new Chromecast(),
+            theme: new Theme()
         };
     }, []);
     const [shortcutModalOpen,, closeShortcutsModal, toggleShortcutModal] = useBinaryState(false);
@@ -96,7 +97,7 @@ const App = () => {
         };
         services.chromecast.on('stateChanged', onChromecastStateChange);
         services.chromecast.start();
-
+        services.theme.init().catch((error) => console.error('Theme initialization failed:', error));
         window.services = services;
         return () => {
             services.chromecast.stop();

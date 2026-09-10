@@ -9,6 +9,7 @@ const { useProfile } = require('stremio/common');
 const { Image, SearchBar, Toggle, Video } = require('stremio/components');
 const SeasonsBar = require('./SeasonsBar');
 const { default: EpisodePicker } = require('../EpisodePicker');
+const { default: BatchDownloadControls } = require('./BatchDownloadControls');
 const styles = require('./styles');
 
 let savedScrollTop = 0;
@@ -182,6 +183,18 @@ const VideosList = ({ className, metaItem, libraryItem, season, seasonOnSelect, 
                                 value={search}
                                 onChange={searchInputOnChange}
                             />
+                            {
+                                metaItem?.content?.type === 'Ready' &&
+                                metaItem.content.content.type === 'series' &&
+                                videosForSeason.length > 0 ?
+                                    <BatchDownloadControls
+                                        videos={videos}
+                                        type={metaItem.content.content.type}
+                                        season={selectedSeason}
+                                    />
+                                    :
+                                    null
+                            }
                             <div ref={videosContainerRef} className={styles['videos-container']}>
                                 {
                                     videosForSeason

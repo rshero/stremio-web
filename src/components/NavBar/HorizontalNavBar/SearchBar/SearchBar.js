@@ -23,6 +23,7 @@ const SearchBar = React.memo(({ className, query, active }) => {
     const routeFocused = useRouteFocused();
     const searchHistory = useSearchHistory();
     const localSearch = useLocalSearch();
+    const runLocalSearch = localSearch.search;
     const navigate = useNavigate();
     const { handlePlayUrl } = usePlayUrl();
 
@@ -51,28 +52,43 @@ const SearchBar = React.memo(({ className, query, active }) => {
         };
     }, [searchHistoryOnClose]);
 
-    const queryInputOnChange = React.useCallback(() => {
+    const queryInputOnChange = React.useCallback(async () => {
         const value = searchInputRef.current.value;
         setCurrentQuery(value);
         openHistory();
-    }, []);
+        // Linux shell integrations can inject clipboard contents as input events.
+        if (/^magnet:\?/i.test(value.trim()) && await handlePlayUrl(value) && searchInputRef.current) {
+            searchInputRef.current.value = '';
+            setCurrentQuery('');
+        }
+    }, [handlePlayUrl]);
 
-    const queryInputOnPaste = React.useCallback((event) => {
+    const queryInputOnPaste = React.useCallback(async (event) => {
         const pasted = event.clipboardData.getData('text');
-        if (pasted) {
-            handlePlayUrl(pasted);
+        if (/^(?:magnet:\?|https?:\/\/)/i.test(pasted.trim())) {
+            event.preventDefault();
+            if (await handlePlayUrl(pasted) && searchInputRef.current) {
+                searchInputRef.current.value = '';
+                setCurrentQuery('');
+            }
         }
     }, [handlePlayUrl]);
 
     const queryInputOnSubmit = React.useCallback((event) => {
         event.preventDefault();
-        const searchValue = `/search?search=${encodeURIComponent(event.target.value)}`;
+        const value = event.target.value;
+        if (/^(?:magnet:\?|https?:\/\/)/i.test(value.trim())) {
+            handlePlayUrl(value);
+            return;
+        }
+
+        const searchValue = `/search?search=${encodeURIComponent(value)}`;
         setCurrentQuery(searchValue);
         if (searchInputRef.current && searchValue) {
-            setSearchParams({ search: event.target.value });
+            setSearchParams({ search: value });
             closeHistory();
         }
-    }, []);
+    }, [closeHistory, handlePlayUrl, setSearchParams]);
 
     const queryInputClear = React.useCallback(() => {
         searchInputRef.current.value = '';
@@ -82,24 +98,22 @@ const SearchBar = React.memo(({ className, query, active }) => {
     }, []);
 
     const updateLocalSearchDebounced = React.useCallback(debounce((query) => {
-        localSearch.search(query);
-    }, 250), []);
+        if (/^(?:magnet:\?|https?:\/\/)/i.test(query.trim())) {
+            return;
+        }
+        runLocalSearch(query);
+    }, 250), [runLocalSearch]);
 
     React.useEffect(() => {
         updateLocalSearchDebounced(currentQuery);
-    }, [currentQuery]);
+        return () => updateLocalSearchDebounced.cancel();
+    }, [currentQuery, updateLocalSearchDebounced]);
 
     React.useEffect(() => {
         if (routeFocused && active) {
             searchInputRef.current.focus();
         }
     }, [routeFocused, active]);
-
-    React.useEffect(() => {
-        return () => {
-            updateLocalSearchDebounced.cancel();
-        };
-    }, []);
 
     return (
         <div className={classnames(className, styles['search-bar-container'], { 'active': active })} onClick={searchBarOnClick} ref={containerRef}>

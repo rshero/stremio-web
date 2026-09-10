@@ -3,6 +3,7 @@
 const Chromecast = require('./Chromecast');
 const { ServicesProvider, useServices } = require('./ServicesContext');
 const { GamepadProvider, useGamepad } = require('./GamepadContext');
+const Theme = require('./Theme');
 
 module.exports = {
     Chromecast,
@@ -10,4 +11,5 @@ module.exports = {
     useServices,
     GamepadProvider,
     useGamepad,
+    Theme,
 };

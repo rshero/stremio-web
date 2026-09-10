@@ -10,6 +10,9 @@ const { DiscordProvider, useDiscord, EMPTY_DISCORD_TIMESTAMPS, getPlaybackDiscor
 const CONSTANTS = require('./CONSTANTS');
 const { withCoreSuspender, useCoreSuspender } = require('./CoreSuspender');
 const getVisibleChildrenRange = require('./getVisibleChildrenRange');
+const useLocalStorage = require('./useLocalStorage');
+const useTrackMemory = require('./useTrackMemory');
+const { default: useTheme } = require('./useTheme');
 const interfaceLanguages = require('./interfaceLanguages.json');
 const languageNames = require('./languageNames.json');
 const languages = require('./languages');
@@ -78,4 +81,7 @@ module.exports = {
     useTranslate,
     useOrientation,
     useLanguageSorting,
+    useLocalStorage,
+    useTrackMemory,
+    useTheme,
 };

@@ -64,6 +64,11 @@ type UseSubtitlesArgs = {
     closeMenus: () => void,
     closeSubtitlesMenu: () => void,
     toggleSubtitlesMenu: () => void,
+    trackMemory?: {
+        subtitlesTrackId?: string | null,
+        extraSubtitlesTrackId?: string | null,
+    } | null,
+    saveTrackSelection?: (selection: Record<string, string | null>) => void,
 };
 
 type SubtitlesMenuProps = {

@@ -14,6 +14,8 @@ type Props = {
 
 const Menu = ({ selected, streamingServer, onSelect }: Props) => {
     const { t } = useTranslation();
+    const translatedAppearanceLabel = t('SETTINGS_NAV_APPEARANCE');
+    const appearanceLabel = translatedAppearanceLabel === 'SETTINGS_NAV_APPEARANCE' ? 'Appearance' : translatedAppearanceLabel;
     const { shell } = usePlatform();
     const platform = usePlatform();
 
@@ -26,6 +28,9 @@ const Menu = ({ selected, streamingServer, onSelect }: Props) => {
         <div className={styles['menu']}>
             <Button className={classNames(styles['button'], { [styles['selected']]: selected === SECTIONS.GENERAL })} title={t('SETTINGS_NAV_GENERAL')} data-section={SECTIONS.GENERAL} onClick={onSelect}>
                 { t('SETTINGS_NAV_GENERAL') }
+            </Button>
+            <Button className={classNames(styles['button'], { [styles['selected']]: selected === SECTIONS.APPEARANCE })} title={appearanceLabel} data-section={SECTIONS.APPEARANCE} onClick={onSelect}>
+                {appearanceLabel}
             </Button>
             <Button className={classNames(styles['button'], { [styles['selected']]: selected === SECTIONS.INTERFACE })} title={t('INTERFACE')} data-section={SECTIONS.INTERFACE} onClick={onSelect}>
                 { t('INTERFACE') }

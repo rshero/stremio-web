@@ -58,8 +58,7 @@ const usePlayUrl = () => {
                 });
                 return false;
             }
-            createTorrentFromMagnet(trimmed);
-            return true;
+            return createTorrentFromMagnet(trimmed);
         }
 
         return false;

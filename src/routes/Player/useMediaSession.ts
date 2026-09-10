@@ -27,7 +27,7 @@ const useMediaSession = (
             navigator.mediaSession.playbackState = playbackState;
         }
 
-        if (shell.active) {
+        if (shell.active && shell.capabilities.mediaSession) {
             shell.send('media.status', {
                 paused: !!videoState.paused,
             });
@@ -64,7 +64,7 @@ const useMediaSession = (
                 });
             }
 
-            if (shell.active) {
+            if (shell.active && shell.capabilities.mediaSession) {
                 shell.send('media.metadata', {
                     title,
                     artist,
@@ -90,13 +90,17 @@ const useMediaSession = (
             paused ? onPauseRequested() : onPlayRequested();
         };
 
-        shell.on('media.status', onMediaStatus);
+        if (shell.capabilities.mediaSession) {
+            shell.on('media.status', onMediaStatus);
+        }
 
         return () => {
             navigator.mediaSession.setActionHandler('play', null);
             navigator.mediaSession.setActionHandler('pause', null);
             navigator.mediaSession.setActionHandler('nexttrack', null);
-            shell.off('media.status', onMediaStatus);
+            if (shell.capabilities.mediaSession) {
+                shell.off('media.status', onMediaStatus);
+            }
         };
     }, [player.nextVideo, onPlayRequested, onPauseRequested, onNextVideoRequested]);
 };

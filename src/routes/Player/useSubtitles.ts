@@ -89,6 +89,7 @@ const buildCandidates = (
     sessionPreference: SubtitlePreference | null,
     savedTrack: SubtitlesTrackState | null | undefined,
     globalLanguage: string | null,
+    trackMemory?: { subtitlesTrackId?: string | null, extraSubtitlesTrackId?: string | null } | null,
 ) => {
     const candidates: SubtitleCandidate[] = [];
     const languagesOrder: string[] = [];
@@ -97,6 +98,12 @@ const buildCandidates = (
     const savedLanguage = normalizeLanguage(savedTrack?.language);
     const savedSource = savedTrack ? (savedTrack.embedded ? 'embedded' : 'external') : undefined;
     const preferredSource = sessionEnabled ? sessionPreference.source : savedSource;
+    if (trackMemory?.subtitlesTrackId) {
+        candidates.push({ source: 'embedded', id: trackMemory.subtitlesTrackId });
+    }
+    if (trackMemory?.extraSubtitlesTrackId) {
+        candidates.push({ source: 'external', id: trackMemory.extraSubtitlesTrackId });
+    }
     const sources: SubtitleSource[] = preferredSource === 'external' ?
         ['external', 'embedded']
         :
@@ -169,6 +176,8 @@ const useSubtitles = ({
     closeMenus,
     closeSubtitlesMenu,
     toggleSubtitlesMenu,
+    trackMemory = null,
+    saveTrackSelection,
 }: UseSubtitlesArgs): UseSubtitlesResult => {
     const { t } = useTranslation();
     const toast = useToast();
@@ -206,6 +215,9 @@ const useSubtitles = ({
     }, []);
 
     const rememberTrack = useCallback((track: SubtitleTrack, embedded: boolean) => {
+        saveTrackSelection?.({
+            [embedded ? 'subtitlesTrackId' : 'extraSubtitlesTrackId']: track.id,
+        });
         const language = normalizeLanguage(track.lang);
         lastSelectedTrack.current = {
             id: track.id,
@@ -224,7 +236,7 @@ const useSubtitles = ({
             source: embedded ? 'embedded' : 'external',
             ...(language ? { language } : {}),
         });
-    }, [streamStateChanged, subtitlePreferenceChanged]);
+    }, [saveTrackSelection, streamStateChanged, subtitlePreferenceChanged]);
 
     const disableSubtitles = useCallback(() => {
         const selectedTrack = video.state.selectedSubtitlesTrackId !== null ?
@@ -345,7 +357,12 @@ const useSubtitles = ({
         }
 
         const savedTrack = player.streamState?.subtitleTrack;
-        const candidates = buildCandidates(sessionPreference, savedTrack, settings.subtitlesLanguage);
+        const candidates = buildCandidates(
+            sessionPreference,
+            savedTrack,
+            settings.subtitlesLanguage,
+            trackMemory,
+        );
         const bestCandidate = resolveBestCandidate(
             candidates,
             video.state.subtitlesTracks,
@@ -406,6 +423,7 @@ const useSubtitles = ({
         };
     }, [
         player.subtitlePreference,
+        trackMemory,
         player.streamState,
         settings.subtitlesLanguage,
         video.state.extraSubtitlesTracks,

@@ -15,31 +15,43 @@ const useTorrent = () => {
     const createTorrentTimeout = React.useRef(null);
     const parsingToastId = React.useRef(null);
     const createTorrentFromMagnet = React.useCallback((text) => {
-        const parsed = magnet.decode(text);
-        if (parsed && typeof parsed.infoHash === 'string') {
-            parsingToastId.current = toast.show({
-                type: 'success',
-                title: 'Loading magnet link…',
-                timeout: CREATE_TORRENT_TIMEOUT
-            });
-            core.transport.dispatch({
-                action: 'StreamingServer',
-                args: {
-                    action: 'CreateTorrent',
-                    args: text
-                }
-            });
-            clearTimeout(createTorrentTimeout.current);
-            createTorrentTimeout.current = setTimeout(() => {
-                toast.remove(parsingToastId.current);
-                toast.show({
-                    type: 'error',
-                    title: 'Failed to parse magnet link.',
-                    timeout: 8000
-                });
-            }, CREATE_TORRENT_TIMEOUT);
+        if (typeof text !== 'string') {
+            return false;
         }
-    }, []);
+
+        const trimmed = text.trim();
+        if (!/^magnet:\?/i.test(trimmed)) {
+            return false;
+        }
+
+        const parsed = magnet.decode(trimmed);
+        if (!parsed || typeof parsed.infoHash !== 'string' || parsed.infoHash.length === 0) {
+            return false;
+        }
+
+        parsingToastId.current = toast.show({
+            type: 'success',
+            title: 'Loading magnet link…',
+            timeout: CREATE_TORRENT_TIMEOUT
+        });
+        core.transport.dispatch({
+            action: 'StreamingServer',
+            args: {
+                action: 'CreateTorrent',
+                args: trimmed
+            }
+        });
+        clearTimeout(createTorrentTimeout.current);
+        createTorrentTimeout.current = setTimeout(() => {
+            toast.remove(parsingToastId.current);
+            toast.show({
+                type: 'error',
+                title: 'Failed to parse magnet link.',
+                timeout: 8000
+            });
+        }, CREATE_TORRENT_TIMEOUT);
+        return true;
+    }, [core, toast]);
     React.useEffect(() => {
         if (streamingServer.torrent !== null) {
             const [, { type }] = streamingServer.torrent;

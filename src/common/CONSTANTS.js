@@ -4,6 +4,7 @@ const CHROMECAST_RECEIVER_APP_ID = '1634F54B';
 const DEFAULT_STREAMING_SERVER_URL = 'http://127.0.0.1:11470/';
 const DEFAULT_SUBTITLES_LANGUAGE = 'eng';
 const LOCAL_SUBTITLES_LANGUAGE = 'local';
+const STREAM_QUALITY_OPTIONS = ['2160p', '1440p', '1080p', '720p', '576p', '480p', '360p', '240p', '8K', '4K', 'UHD', 'FHD', 'HD'];
 const SUBTITLES_SIZES = [75, 100, 125, 150, 175, 200, 250];
 const SUBTITLES_FONTS = ['PlusJakartaSans', 'Arial', 'Halvetica', 'Times New Roman', 'Verdana', 'Courier', 'Lucida Console', 'sans-serif', 'serif', 'monospace'];
 const SEEK_TIME_DURATIONS = [3000, 5000, 10000, 15000, 20000, 30000];
@@ -128,6 +129,7 @@ const PROTOCOL = 'stremio:';
 module.exports = {
     CHROMECAST_RECEIVER_APP_ID,
     DEFAULT_STREAMING_SERVER_URL,
+    STREAM_QUALITY_OPTIONS,
     DEFAULT_SUBTITLES_LANGUAGE,
     LOCAL_SUBTITLES_LANGUAGE,
     SUBTITLES_SIZES,

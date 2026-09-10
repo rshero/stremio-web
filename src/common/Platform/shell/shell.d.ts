@@ -24,6 +24,7 @@ interface Shell {
 type ShellCapabilities = {
     gpuVideoProcessing: boolean;
     nativeAssSubtitles: boolean;
+    mediaSession: boolean;
 };
 
 type ShellState = {
