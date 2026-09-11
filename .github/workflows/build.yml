@@ -1,0 +1,51 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - development
+    tags-ignore:
+      - "**"
+  pull_request:
+    branches:
+      - development
+  # Allow manual dispatch in GH
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6.0.10
+        with:
+          version: 11.8.0
+          run_install: false
+      - name: Setup node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: "pnpm"
+      - name: Install NPM dependencies
+        run: pnpm install
+      - name: Build
+        run: pnpm build
+      - name: Test
+        run: pnpm test
+      - name: Lint
+        run: pnpm lint
+      - name: Deploy to GitHub Pages
+        if: github.event.pull_request.head.repo.fork == false && github.actor != 'dependabot[bot]'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build
+          target-folder: ${{ github.head_ref || github.ref_name }}
+          # rebase and retry instead of force pushing, so concurrent
+          # runs (e.g. stacked PRs) don't reject each other's push
+          force: false
+          attempt-limit: 10

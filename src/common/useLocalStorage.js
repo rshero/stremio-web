@@ -1,40 +1,52 @@
-// Copyright (C) 2017-2023 Smart code 203358507
+// Copyright (C) 2017-2026 Smart code 203358507
 
 const React = require('react');
 
 const STORAGE_KEY_PREFIX = 'stremio_web_';
 
-/**
- * Custom hook for managing client-side settings in localStorage
- * @param {string} key - The storage key (will be prefixed with 'stremio_web_')
- * @param {*} defaultValue - Default value if not found in storage
- * @returns {[*, function]} - Current value and setter function
- */
+const readValue = (storageKey, defaultValue) => {
+    if (typeof window === 'undefined' || !window.localStorage) {
+        return defaultValue;
+    }
+
+    try {
+        const stored = window.localStorage.getItem(storageKey);
+        return stored === null ? defaultValue : JSON.parse(stored);
+    } catch (error) {
+        console.warn(`Failed to read localStorage key "${storageKey}":`, error);
+        return defaultValue;
+    }
+};
+
 const useLocalStorage = (key, defaultValue) => {
-    const storageKey = STORAGE_KEY_PREFIX + key;
+    const storageKey = `${STORAGE_KEY_PREFIX}${key}`;
+    const [value, setValue] = React.useState(() => readValue(storageKey, defaultValue));
+    const previousStorageKey = React.useRef(storageKey);
 
-    const [value, setValue] = React.useState(() => {
-        try {
-            const stored = window.localStorage.getItem(storageKey);
-            if (stored !== null) {
-                return JSON.parse(stored);
+    React.useEffect(() => {
+        if (previousStorageKey.current !== storageKey) {
+            previousStorageKey.current = storageKey;
+            setValue(readValue(storageKey, defaultValue));
+        }
+    }, [storageKey]);
+
+    const setStoredValue = React.useCallback((nextValue) => {
+        setValue((currentValue) => {
+            const resolvedValue = typeof nextValue === 'function' ? nextValue(currentValue) : nextValue;
+            if (typeof window !== 'undefined' && window.localStorage) {
+                try {
+                    if (resolvedValue === undefined) {
+                        window.localStorage.removeItem(storageKey);
+                    } else {
+                        window.localStorage.setItem(storageKey, JSON.stringify(resolvedValue));
+                    }
+                } catch (error) {
+                    console.warn(`Failed to write localStorage key "${storageKey}":`, error);
+                }
             }
-            return defaultValue;
-        } catch (error) {
-            console.warn(`Failed to read localStorage key "${storageKey}":`, error);
-            return defaultValue;
-        }
-    });
-
-    const setStoredValue = React.useCallback((newValue) => {
-        try {
-            const valueToStore = typeof newValue === 'function' ? newValue(value) : newValue;
-            setValue(valueToStore);
-            window.localStorage.setItem(storageKey, JSON.stringify(valueToStore));
-        } catch (error) {
-            console.warn(`Failed to write localStorage key "${storageKey}":`, error);
-        }
-    }, [storageKey, value]);
+            return resolvedValue;
+        });
+    }, [storageKey]);
 
     return [value, setStoredValue];
 };

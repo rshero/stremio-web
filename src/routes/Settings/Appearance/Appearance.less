@@ -1,165 +1,62 @@
-// Copyright (C) 2017-2025 Smart code 203358507
-
 @import (reference) '~stremio/common/screen-sizes.less';
 
-.appearance-section {
-    position: relative;
-    max-width: 35rem;
-    display: flex;
-    flex-direction: column;
-    align-items: start;
-    padding: 3rem 0;
-    overflow: visible;
-
-    &:not(:last-child) {
-        border-bottom: thin solid var(--overlay-color);
-    }
-}
-
-.section-header {
-    flex: none;
-    align-self: stretch;
-    font-size: 1.8rem;
-    line-height: 3.4rem;
-    margin-bottom: 2rem;
-    color: var(--primary-foreground-color);
-}
-
-.option-container {
-    position: relative;
-    width: 100%;
-    flex: none;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 2rem;
-    margin-bottom: 1rem;
-    overflow: visible;
-}
-
-.option-label {
-    flex: 1 1 50%;
-    line-height: 1.5rem;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    color: var(--primary-foreground-color);
-}
-
-.theme-input-container {
-    flex: 1 1 50%;
-    width: 100%;
-}
-
-.theme-input {
-    width: 100%;
-    background-color: var(--overlay-color);
-    border-radius: var(--border-radius);
-    color: var(--primary-foreground-color);
-    padding: 0.75rem 1rem;
-    border: 1px solid transparent;
-    transition: border-color 0.2s ease;
-
-    &:focus {
-        border-color: var(--primary-accent-color);
-    }
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-}
-
-.theme-actions {
+.actions {
     display: flex;
     gap: 1rem;
-    margin-top: 1rem;
-    width: 100%;
+    margin: 0 0 1rem;
 }
 
-.apply-button,
-.clear-button {
+.button {
+    flex: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.75rem 1.5rem;
+    min-width: 9rem;
+    min-height: 3rem;
+    padding: 0.65rem 1.25rem;
     border-radius: var(--border-radius);
-    font-weight: 600;
-    transition: all 0.2s ease;
-    cursor: pointer;
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-}
-
-.apply-button {
-    background-color: var(--primary-accent-color);
-    color: var(--secondary-foreground-color);
-
-    &:hover:not(:disabled) {
-        filter: brightness(1.1);
-    }
-}
-
-.clear-button {
     background-color: var(--overlay-color);
     color: var(--primary-foreground-color);
-
-    &:hover:not(:disabled) {
-        background-color: var(--danger-accent-color);
-        color: var(--secondary-foreground-color);
-    }
+    white-space: nowrap;
 }
 
-.error-message {
-    margin-top: 1rem;
-    padding: 0.75rem 1rem;
-    background-color: rgba(220, 38, 38, 0.2);
-    border: 1px solid var(--danger-accent-color);
-    border-radius: var(--border-radius);
-    color: var(--danger-accent-color);
-    font-size: 0.875rem;
+.button:hover, .button:focus {
+    background-color: var(--primary-accent-color);
+}
+
+.input {
     width: 100%;
-}
-
-.current-theme {
-    margin-top: 1rem;
+    min-width: 15rem;
     padding: 0.75rem 1rem;
-    background-color: rgba(34, 179, 101, 0.1);
-    border: 1px solid var(--secondary-accent-color);
+    border: var(--focus-outline-size) solid transparent;
     border-radius: var(--border-radius);
-    color: var(--secondary-accent-color);
-    font-size: 0.875rem;
-    word-break: break-all;
-    width: 100%;
-}
-
-.theme-hint {
-    margin-top: 1rem;
+    background-color: var(--overlay-color);
     color: var(--primary-foreground-color);
-    opacity: 0.6;
-    font-size: 0.8rem;
-    line-height: 1.5;
+}
+
+.input:focus {
+    border-color: var(--primary-foreground-color);
+    outline: none;
+}
+
+.current, .hint {
+    margin-top: 0.75rem;
+    color: var(--primary-foreground-color);
+    font-size: 0.85rem;
+    word-break: break-word;
+}
+
+.current {
+    color: var(--secondary-accent-color);
+}
+
+.hint {
+    opacity: 0.65;
 }
 
 @media only screen and (max-width: @minimum) {
-    .option-container {
+    .actions {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-
-    .option-label {
-        flex: none;
-    }
-
-    .theme-input-container {
-        flex: none;
-        width: 100%;
-    }
-
-    .theme-actions {
-        flex-direction: column;
+        align-items: stretch;
     }
 }

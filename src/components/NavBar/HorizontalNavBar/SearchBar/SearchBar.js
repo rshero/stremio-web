@@ -1,15 +1,17 @@
 // Copyright (C) 2017-2023 Smart code 203358507
 
 const React = require('react');
+const { useNavigate } = require('react-router');
+const { useSearchParams } = require('react-router-dom');
 const PropTypes = require('prop-types');
 const classnames = require('classnames');
 const debounce = require('lodash.debounce');
 const { useTranslation } = require('react-i18next');
 const { default: Icon } = require('@stremio/stremio-icons/react');
-const { useRouteFocused } = require('stremio-router');
+const { default: useRouteFocused } = require('stremio/common/useRouteFocused');
 const Button = require('stremio/components/Button').default;
 const TextInput = require('stremio/components/TextInput').default;
-const useTorrent = require('stremio/common/useTorrent');
+const { default: usePlayUrl } = require('stremio/common/usePlayUrl');
 const { withCoreSuspender } = require('stremio/common/CoreSuspender');
 const useSearchHistory = require('./useSearchHistory');
 const useLocalSearch = require('./useLocalSearch');
@@ -21,17 +23,19 @@ const SearchBar = React.memo(({ className, query, active }) => {
     const routeFocused = useRouteFocused();
     const searchHistory = useSearchHistory();
     const localSearch = useLocalSearch();
-    const { createTorrentFromMagnet } = useTorrent();
+    const runLocalSearch = localSearch.search;
+    const navigate = useNavigate();
+    const { handlePlayUrl } = usePlayUrl();
 
     const [historyOpen, openHistory, closeHistory, ] = useBinaryState(query === null ? true : false);
     const [currentQuery, setCurrentQuery] = React.useState(query || '');
-
+    const [, setSearchParams] = useSearchParams();
     const searchInputRef = React.useRef(null);
     const containerRef = React.useRef(null);
 
     const searchBarOnClick = React.useCallback(() => {
         if (!active) {
-            window.location = '#/search';
+            navigate('/search');
         }
     }, [active]);
 
@@ -48,73 +52,68 @@ const SearchBar = React.memo(({ className, query, active }) => {
         };
     }, [searchHistoryOnClose]);
 
-    const queryInputOnPaste = React.useCallback((event) => {
-        const pastedText = event.clipboardData.getData('text');
-        if (pastedText && pastedText.startsWith('magnet:')) {
-            event.preventDefault();
-            createTorrentFromMagnet(pastedText);
-        }
-    }, [createTorrentFromMagnet]);
-
-    const queryInputOnChange = React.useCallback(() => {
+    const queryInputOnChange = React.useCallback(async () => {
         const value = searchInputRef.current.value;
         setCurrentQuery(value);
         openHistory();
-        // Handle magnet links pasted via JS injection (e.g., Linux shell Ctrl+V)
-        if (value && value.startsWith('magnet:')) {
-            createTorrentFromMagnet(value);
+        // Linux shell integrations can inject clipboard contents as input events.
+        if (/^magnet:\?/i.test(value.trim()) && await handlePlayUrl(value) && searchInputRef.current) {
             searchInputRef.current.value = '';
             setCurrentQuery('');
         }
-    }, [createTorrentFromMagnet]);
+    }, [handlePlayUrl]);
+
+    const queryInputOnPaste = React.useCallback(async (event) => {
+        const pasted = event.clipboardData.getData('text');
+        if (/^(?:magnet:\?|https?:\/\/)/i.test(pasted.trim())) {
+            event.preventDefault();
+            if (await handlePlayUrl(pasted) && searchInputRef.current) {
+                searchInputRef.current.value = '';
+                setCurrentQuery('');
+            }
+        }
+    }, [handlePlayUrl]);
 
     const queryInputOnSubmit = React.useCallback((event) => {
         event.preventDefault();
         const value = event.target.value;
-        // Don't search for magnet links - they're handled separately
-        if (value && value.startsWith('magnet:')) {
-            createTorrentFromMagnet(value);
-            searchInputRef.current.value = '';
-            setCurrentQuery('');
+        if (/^(?:magnet:\?|https?:\/\/)/i.test(value.trim())) {
+            handlePlayUrl(value);
             return;
         }
+
         const searchValue = `/search?search=${encodeURIComponent(value)}`;
         setCurrentQuery(searchValue);
         if (searchInputRef.current && searchValue) {
-            window.location.hash = searchValue;
+            setSearchParams({ search: value });
             closeHistory();
         }
-    }, [createTorrentFromMagnet]);
+    }, [closeHistory, handlePlayUrl, setSearchParams]);
 
     const queryInputClear = React.useCallback(() => {
         searchInputRef.current.value = '';
         setCurrentQuery('');
-        window.location.hash = '/search';
+        setSearchParams({});
+        navigate('/search');
     }, []);
 
     const updateLocalSearchDebounced = React.useCallback(debounce((query) => {
-        // Skip local search for magnet links and other special URLs
-        if (query && (query.startsWith('magnet:') || query.startsWith('http://') || query.startsWith('https://'))) {
+        if (/^(?:magnet:\?|https?:\/\/)/i.test(query.trim())) {
             return;
         }
-        localSearch.search(query);
-    }, 250), []);
+        runLocalSearch(query);
+    }, 250), [runLocalSearch]);
 
     React.useEffect(() => {
         updateLocalSearchDebounced(currentQuery);
-    }, [currentQuery]);
+        return () => updateLocalSearchDebounced.cancel();
+    }, [currentQuery, updateLocalSearchDebounced]);
 
     React.useEffect(() => {
         if (routeFocused && active) {
             searchInputRef.current.focus();
         }
     }, [routeFocused, active]);
-
-    React.useEffect(() => {
-        return () => {
-            updateLocalSearchDebounced.cancel();
-        };
-    }, []);
 
     return (
         <div className={classnames(className, styles['search-bar-container'], { 'active': active })} onClick={searchBarOnClick} ref={containerRef}>

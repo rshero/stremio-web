@@ -1,278 +1,155 @@
-// Copyright (C) 2017-2025 Smart code 203358507
+// Copyright (C) 2017-2026 Smart code 203358507
 
 const EventEmitter = require('eventemitter3');
 
 const STORAGE_KEY = 'stremio_web_theme_url';
 const STYLE_ELEMENT_ID = 'stremio-custom-theme';
-const FETCH_TIMEOUT = 10000; // 10 second timeout for fetching CSS
-const SHELL_IPC_TIMEOUT = 2000; // 2 second timeout for shell IPC
+const FETCH_TIMEOUT = 10000;
 
-/**
- * Theme service that handles loading and applying custom CSS themes.
- * Uses shell API for file storage when available, falls back to localStorage.
- */
-function Theme() {
+const Theme = function() {
     let currentUrl = null;
     let loading = false;
     let error = null;
     let css = null;
-
     const events = new EventEmitter();
 
-    // Check if running in shell with theme API
-    const isShell = () => {
-        return typeof window !== 'undefined' && 
-               window.stremioTheme && 
-               window.stremioTheme.isShell === true;
-    };
+    const shellTheme = () => typeof window !== 'undefined' ? window.stremioTheme : null;
+    const isShell = () => shellTheme()?.isShell === true;
 
-    // Get or create the style element for custom themes
-    const getStyleElement = () => {
+    const emit = () => events.emit('stateChanged');
+
+    const applyCSS = (value) => {
         let element = document.getElementById(STYLE_ELEMENT_ID);
         if (!element) {
             element = document.createElement('style');
             element.id = STYLE_ELEMENT_ID;
-            element.type = 'text/css';
             document.head.appendChild(element);
         }
-        return element;
+        element.textContent = value || '';
+        css = value || null;
     };
 
-    // Apply CSS to the page
-    const applyCSS = (cssContent) => {
-        const styleElement = getStyleElement();
-        styleElement.textContent = cssContent || '';
-        css = cssContent;
-    };
-
-    // Remove custom theme
-    const removeCSS = () => {
-        const styleElement = document.getElementById(STYLE_ELEMENT_ID);
-        if (styleElement) {
-            styleElement.textContent = '';
-        }
+    const clearCSS = () => {
+        const element = document.getElementById(STYLE_ELEMENT_ID);
+        element?.remove();
         css = null;
     };
 
-    // Fetch CSS from URL with timeout
     const fetchCSS = async (url) => {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
-
+        const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
         try {
-            const response = await fetch(url, {
-                method: 'GET',
-                mode: 'cors',
-                cache: 'no-cache',
-                signal: controller.signal,
-            });
-
-            clearTimeout(timeoutId);
-
+            const response = await fetch(url, { signal: controller.signal, cache: 'no-cache' });
             if (!response.ok) {
                 throw new Error(`Failed to fetch theme: ${response.status} ${response.statusText}`);
             }
-
-            return response.text();
-        } catch (e) {
-            clearTimeout(timeoutId);
-            if (e.name === 'AbortError') {
+            return await response.text();
+        } catch (cause) {
+            if (cause?.name === 'AbortError') {
                 throw new Error('Theme fetch timed out');
             }
-            throw e;
+            throw cause;
+        } finally {
+            clearTimeout(timeout);
         }
     };
 
-    // Save URL to storage (shell or localStorage)
     const saveUrl = (url) => {
-        if (isShell()) {
-            try {
-                window.stremioTheme.setUrl(url);
-            } catch (e) {
-                console.warn('Failed to save theme URL to shell:', e);
+        const api = shellTheme();
+        try {
+            if (api?.setUrl) {
+                api.setUrl(url);
             }
+        } catch (cause) {
+            console.warn('Failed to save theme URL to shell:', cause);
         }
-        // Always save to localStorage as backup
         try {
             if (url) {
                 localStorage.setItem(STORAGE_KEY, url);
             } else {
                 localStorage.removeItem(STORAGE_KEY);
             }
-        } catch (e) {
-            console.warn('Failed to save theme URL to localStorage:', e);
+        } catch (cause) {
+            console.warn('Failed to save theme URL to localStorage:', cause);
         }
     };
 
-    // Load URL from storage - localStorage first (fast), shell as fallback
-    const loadStoredUrl = () => {
-        // Always use localStorage - it's synchronous and fast
+    const loadStoredUrl = async () => {
         try {
-            return localStorage.getItem(STORAGE_KEY) || null;
-        } catch (e) {
-            console.warn('Failed to load theme URL from localStorage:', e);
+            const localUrl = localStorage.getItem(STORAGE_KEY);
+            if (localUrl) return localUrl;
+        } catch (cause) {
+            console.warn('Failed to load theme URL from localStorage:', cause);
+        }
+
+        const api = shellTheme();
+        if (!api?.getSettings) return null;
+        try {
+            const settings = await Promise.race([
+                Promise.resolve(api.getSettings()),
+                new Promise((resolve) => setTimeout(() => resolve(null), 2000)),
+            ]);
+            return settings?.url || null;
+        } catch (cause) {
+            console.warn('Failed to load theme settings from shell:', cause);
             return null;
         }
     };
 
-    // Load URL from shell storage with timeout
-    const loadFromShell = () => {
-        return new Promise((resolve) => {
-            if (!isShell()) {
-                resolve(null);
-                return;
-            }
-
-            const timeoutId = setTimeout(() => {
-                console.warn('Shell theme settings request timed out');
-                resolve(null);
-            }, SHELL_IPC_TIMEOUT);
-
-            try {
-                window.stremioTheme.getSettings()
-                    .then((settings) => {
-                        clearTimeout(timeoutId);
-                        resolve(settings?.url || null);
-                    })
-                    .catch((e) => {
-                        clearTimeout(timeoutId);
-                        console.warn('Failed to load theme settings from shell:', e);
-                        resolve(null);
-                    });
-            } catch (e) {
-                clearTimeout(timeoutId);
-                console.warn('Failed to call shell getSettings:', e);
-                resolve(null);
-            }
-        });
-    };
-
-    function onStateChanged() {
-        events.emit('stateChanged');
-    }
-
     Object.defineProperties(this, {
-        url: {
-            configurable: false,
-            enumerable: true,
-            get: function() {
-                return currentUrl;
-            }
-        },
-        loading: {
-            configurable: false,
-            enumerable: true,
-            get: function() {
-                return loading;
-            }
-        },
-        error: {
-            configurable: false,
-            enumerable: true,
-            get: function() {
-                return error;
-            }
-        },
-        css: {
-            configurable: false,
-            enumerable: true,
-            get: function() {
-                return css;
-            }
-        },
-        isShell: {
-            configurable: false,
-            enumerable: true,
-            get: function() {
-                return isShell();
-            }
-        }
+        url: { enumerable: true, get: () => currentUrl },
+        loading: { enumerable: true, get: () => loading },
+        error: { enumerable: true, get: () => error },
+        css: { enumerable: true, get: () => css },
+        isShell: { enumerable: true, get: isShell },
     });
 
-    /**
-     * Load and apply a theme from a URL
-     * @param {string} url - URL to a CSS file
-     * @returns {Promise<void>}
-     */
-    this.load = async function(url) {
-        if (!url) {
+    this.load = async (url) => {
+        const nextUrl = typeof url === 'string' ? url.trim() : '';
+        if (!nextUrl) {
             return this.clear();
         }
 
         loading = true;
         error = null;
-        onStateChanged();
-
+        emit();
         try {
-            // Validate URL
-            new URL(url);
-            
-            const cssContent = await fetchCSS(url);
-            applyCSS(cssContent);
-            currentUrl = url;
-            saveUrl(url);
-            error = null;
-        } catch (e) {
-            error = e;
-            console.error('Failed to load theme:', e);
+            const parsed = new URL(nextUrl);
+            if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+                throw new Error('Theme URL must use HTTP or HTTPS');
+            }
+            const value = await fetchCSS(nextUrl);
+            applyCSS(value);
+            currentUrl = nextUrl;
+            saveUrl(nextUrl);
+        } catch (cause) {
+            error = cause instanceof Error ? cause : new Error(String(cause));
+            console.error('Failed to load theme:', error);
         } finally {
             loading = false;
-            onStateChanged();
+            emit();
         }
     };
 
-    /**
-     * Clear the current theme and reset to default
-     */
-    this.clear = function() {
-        removeCSS();
+    this.clear = async () => {
+        clearCSS();
         currentUrl = null;
         error = null;
         saveUrl(null);
-        onStateChanged();
+        emit();
     };
 
-    /**
-     * Initialize theme service - loads stored theme on startup
-     */
-    this.init = async function() {
-        // First try localStorage (fast, synchronous)
-        let storedUrl = loadStoredUrl();
-        
-        // If no localStorage URL and we're in shell, try shell storage
-        if (!storedUrl && isShell()) {
-            storedUrl = await loadFromShell();
-            // Sync to localStorage if found in shell
-            if (storedUrl) {
-                try {
-                    localStorage.setItem(STORAGE_KEY, storedUrl);
-                } catch (e) {
-                    // ignore
-                }
-            }
-        }
-
-        if (storedUrl) {
-            await this.load(storedUrl);
-        }
+    this.init = async () => {
+        const storedUrl = await loadStoredUrl();
+        if (storedUrl) await this.load(storedUrl);
     };
 
-    /**
-     * Reload the current theme (useful if the remote CSS file was updated)
-     */
-    this.reload = async function() {
-        if (currentUrl) {
-            await this.load(currentUrl);
-        }
+    this.reload = async () => {
+        if (currentUrl) await this.load(currentUrl);
     };
 
-    this.on = function(name, listener) {
-        events.on(name, listener);
-    };
-
-    this.off = function(name, listener) {
-        events.off(name, listener);
-    };
-}
+    this.on = (name, listener) => events.on(name, listener);
+    this.off = (name, listener) => events.off(name, listener);
+};
 
 module.exports = Theme;

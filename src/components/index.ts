@@ -1,4 +1,5 @@
 import AddonDetailsModal from './AddonDetailsModal';
+import ActionMenu from './ActionMenu';
 import BottomSheet from './BottomSheet';
 import Button from './Button';
 import Checkbox from './Checkbox';
@@ -29,10 +30,13 @@ import ShortcutsGroup from './ShortcutsGroup';
 import TextInput from './TextInput';
 import Toggle from './Toggle';
 import Transition from './Transition';
+import UpdateBanner from './UpdateBanner';
 import Video from './Video';
+import ActionsGroup from './ActionsGroup';
 
 export {
     AddonDetailsModal,
+    ActionMenu,
     BottomSheet,
     Button,
     Checkbox,
@@ -64,5 +68,7 @@ export {
     TextInput,
     Toggle,
     Transition,
+    UpdateBanner,
     Video,
+    ActionsGroup
 };

@@ -1,5 +1,3 @@
-// Copyright (C) 2017-2025 Smart code 203358507
+// Copyright (C) 2017-2026 Smart code 203358507
 
-const Theme = require('./Theme');
-
-module.exports = Theme;
+module.exports = require('./Theme');

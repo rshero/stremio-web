@@ -1,58 +1,64 @@
 // Copyright (C) 2017-2023 Smart code 203358507
 
-const { FileDropProvider, onFileDrop } = require('./FileDrop');
+const { FileDropProvider, useFileDrop, onFileDrop } = require('./FileDrop');
+const { FullscreenProvider, useFullscreen } = require('./Fullscreen');
 const { PlatformProvider, usePlatform } = require('./Platform');
 const { ToastProvider, useToast } = require('./Toast');
 const { TooltipProvider, Tooltip } = require('./Tooltips');
-const { ShortcutsProvider, useShortcuts } = require('./Shortcuts');
-const comparatorWithPriorities = require('./comparatorWithPriorities');
+const { ShortcutsProvider, useShortcuts, onShortcut, getKeyboardShortcutKey, getKeyboardShortcutKeys } = require('./Shortcuts');
+const { DiscordProvider, useDiscord, EMPTY_DISCORD_TIMESTAMPS, getPlaybackDiscordActivity } = require('./Discord');
 const CONSTANTS = require('./CONSTANTS');
 const { withCoreSuspender, useCoreSuspender } = require('./CoreSuspender');
-const extractStreamQuality = require('./extractStreamQuality');
 const getVisibleChildrenRange = require('./getVisibleChildrenRange');
 const useLocalStorage = require('./useLocalStorage');
+const useTrackMemory = require('./useTrackMemory');
+const { default: useTheme } = require('./useTheme');
 const interfaceLanguages = require('./interfaceLanguages.json');
 const languageNames = require('./languageNames.json');
 const languages = require('./languages');
 const routesRegexp = require('./routesRegexp');
 const useAnimationFrame = require('./useAnimationFrame');
 const useBinaryState = require('./useBinaryState');
-const { default: useFullscreen } = require('./useFullscreen');
 const { default: useInterval } = require('./useInterval');
 const useLiveRef = require('./useLiveRef');
 const useModelState = require('./useModelState');
 const useNotifications = require('./useNotifications');
 const useOnScrollToBottom = require('./useOnScrollToBottom');
 const useProfile = require('./useProfile');
+const { default: useRouteFocused } = require('./useRouteFocused');
 const { default: useSettings } = require('./useSettings');
-const { default: useShell } = require('./useShell');
 const useStreamingServer = require('./useStreamingServer');
 const { default: useTimeout } = require('./useTimeout');
+const { default: usePlayUrl } = require('./usePlayUrl');
 const useTorrent = require('./useTorrent');
 const useTranslate = require('./useTranslate');
 const { default: useOrientation } = require('./useOrientation');
 const { default: useLanguageSorting } = require('./useLanguageSorting');
-const { default: useTheme } = require('./useTheme');
-const useTrackMemory = require('./useTrackMemory');
 
 module.exports = {
     FileDropProvider,
+    useFileDrop,
     onFileDrop,
+    FullscreenProvider,
     PlatformProvider,
     usePlatform,
     ShortcutsProvider,
     useShortcuts,
+    onShortcut,
+    getKeyboardShortcutKey,
+    getKeyboardShortcutKeys,
     ToastProvider,
     useToast,
     TooltipProvider,
     Tooltip,
-    comparatorWithPriorities,
+    DiscordProvider,
+    useDiscord,
+    EMPTY_DISCORD_TIMESTAMPS,
+    getPlaybackDiscordActivity,
     CONSTANTS,
     withCoreSuspender,
     useCoreSuspender,
-    extractStreamQuality,
     getVisibleChildrenRange,
-    useLocalStorage,
     interfaceLanguages,
     languageNames,
     languages,
@@ -66,14 +72,16 @@ module.exports = {
     useNotifications,
     useOnScrollToBottom,
     useProfile,
+    useRouteFocused,
     useSettings,
-    useShell,
     useStreamingServer,
     useTimeout,
+    usePlayUrl,
     useTorrent,
     useTranslate,
     useOrientation,
     useLanguageSorting,
-    useTheme,
+    useLocalStorage,
     useTrackMemory,
+    useTheme,
 };

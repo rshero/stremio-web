@@ -1,5 +1,3 @@
-// Copyright (C) 2017-2025 Smart code 203358507
-
 declare class Theme {
     readonly url: string | null;
     readonly loading: boolean;

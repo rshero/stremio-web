@@ -55,6 +55,8 @@ html:not(.active-slider-within) {
         }
 
         &.nav-bar-layer {
+            left: var(--safe-area-inset-left);
+            right: var(--safe-area-inset-right);
             bottom: initial;
             background: transparent;
             overflow: visible;
@@ -67,6 +69,7 @@ html:not(.active-slider-within) {
                 z-index: -1;
                 box-shadow: 0 0 8rem 6rem @color-background-dark5;
                 content: "";
+                pointer-events: none;
             }
 
             .nav-bar-button-container {
@@ -93,8 +96,11 @@ html:not(.active-slider-within) {
         }
 
         &.control-bar-layer {
+            left: var(--safe-area-inset-left);
+            right: var(--safe-area-inset-right);
             top: initial;
             overflow: visible;
+            padding-bottom: calc(0.5rem + var(--safe-area-inset-bottom));
 
             &::before {
                 position: absolute;
@@ -104,6 +110,7 @@ html:not(.active-slider-within) {
                 z-index: -1;
                 box-shadow: 0 0 8rem 8rem @color-background-dark5;
                 content: "";
+                pointer-events: none;
             }
         }
 
@@ -118,8 +125,8 @@ html:not(.active-slider-within) {
             top: initial;
             left: initial;
             right: 4rem;
-            bottom: 8rem;
-            max-height: calc(100% - 13.5rem);
+            bottom: 7.5rem;
+            max-height: calc(100% - 13rem);
             max-width: calc(100% - 4rem);
             border-radius: var(--border-radius);
             background-color: var(--modal-background-color);
