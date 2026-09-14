@@ -9,6 +9,7 @@ const { ShortcutsProvider, useShortcuts, onShortcut, getKeyboardShortcutKey, get
 const { DiscordProvider, useDiscord, EMPTY_DISCORD_TIMESTAMPS, getPlaybackDiscordActivity } = require('./Discord');
 const CONSTANTS = require('./CONSTANTS');
 const { withCoreSuspender, useCoreSuspender } = require('./CoreSuspender');
+const extractStreamQuality = require('./extractStreamQuality');
 const getVisibleChildrenRange = require('./getVisibleChildrenRange');
 const useLocalStorage = require('./useLocalStorage');
 const useTrackMemory = require('./useTrackMemory');
@@ -58,6 +59,7 @@ module.exports = {
     CONSTANTS,
     withCoreSuspender,
     useCoreSuspender,
+    extractStreamQuality,
     getVisibleChildrenRange,
     interfaceLanguages,
     languageNames,
