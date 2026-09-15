@@ -222,9 +222,7 @@ const Player = () => {
         if (player.nextVideo !== null) {
             const deepLinks = player.nextVideo.deepLinks;
             video.unload();
-            if (deepLinks.player) {
-                nextVideo();
-            }
+            nextVideo();
             handleNextVideoNavigation(deepLinks, profile.settings.bingeWatching, true);
         } else {
             video.unload();
@@ -370,9 +368,7 @@ const Player = () => {
             cancelKeyboardSeek();
             const deepLinks = player.nextVideo.deepLinks;
             video.unload();
-            if (deepLinks.player) {
-                nextVideo();
-            }
+            nextVideo();
             handleNextVideoNavigation(deepLinks, profile.settings.bingeWatching, false);
         }
     }, [player.nextVideo, handleNextVideoNavigation, profile.settings.bingeWatching, cancelKeyboardSeek]);
