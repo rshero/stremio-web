@@ -179,6 +179,7 @@ const Player = () => {
     });
 
     const nextVideoPopupDismissed = React.useRef(false);
+    const pendingNextVideoId = React.useRef(null);
     const defaultAudioTrackSelected = React.useRef(false);
     const playingOnExternalDevice = React.useRef(false);
     const requestedVideoScale = React.useRef(null);
@@ -218,17 +219,33 @@ const Player = () => {
     }, []);
 
     const onEnded = React.useCallback(() => {
+        if (video.state.loaded === false) {
+            return;
+        }
+
+        // Stopping the current native player during a manual transition can emit
+        // a late ended event. Do not let it navigate back to the cached stream list.
+        if (pendingNextVideoId.current !== null) {
+            if (videoId !== pendingNextVideoId.current) {
+                return;
+            }
+
+            pendingNextVideoId.current = null;
+        }
+
         ended();
         if (player.nextVideo !== null) {
             const deepLinks = player.nextVideo.deepLinks;
             video.unload();
-            nextVideo();
+            if (deepLinks.player) {
+                nextVideo();
+            }
             handleNextVideoNavigation(deepLinks, profile.settings.bingeWatching, true);
         } else {
             video.unload();
             navigate(-1);
         }
-    }, [player.nextVideo, profile.settings.bingeWatching, handleNextVideoNavigation]);
+    }, [player.nextVideo, profile.settings.bingeWatching, handleNextVideoNavigation, videoId, video.state.loaded]);
 
     const onError = React.useCallback((error) => {
         console.error('Player', error);
@@ -368,7 +385,12 @@ const Player = () => {
             cancelKeyboardSeek();
             const deepLinks = player.nextVideo.deepLinks;
             video.unload();
-            nextVideo();
+            if (deepLinks.player) {
+                pendingNextVideoId.current = player.nextVideo.id;
+                nextVideo();
+            } else {
+                pendingNextVideoId.current = null;
+            }
             handleNextVideoNavigation(deepLinks, profile.settings.bingeWatching, false);
         }
     }, [player.nextVideo, handleNextVideoNavigation, profile.settings.bingeWatching, cancelKeyboardSeek]);

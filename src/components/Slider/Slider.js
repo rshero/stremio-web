@@ -6,8 +6,8 @@ const classnames = require('classnames');
 const { default: useRouteFocused } = require('stremio/common/useRouteFocused');
 const useAnimationFrame = require('stremio/common/useAnimationFrame');
 const useLiveRef = require('stremio/common/useLiveRef');
+const { usePlatform } = require('stremio/common/Platform');
 const styles = require('./styles');
-const {useServices} = require('stremio/services');
 
 const Slider = ({ className, value, buffered, minimumValue, maximumValue, disabled, onSlide, onComplete, audioBoost, stepValue }) => {
     const minimumValueRef = useLiveRef(minimumValue !== null && !isNaN(minimumValue) ? minimumValue : 0);
@@ -19,7 +19,7 @@ const Slider = ({ className, value, buffered, minimumValue, maximumValue, disabl
     const onCompleteRef = useLiveRef(onComplete);
     const sliderContainerRef = React.useRef(null);
     const routeFocused = useRouteFocused();
-    const { shell } = useServices();
+    const { shell } = usePlatform();
     const [requestThumbAnimation, cancelThumbAnimation] = useAnimationFrame();
     const calculateValueForMouseX = React.useCallback((mouseX) => {
         if (sliderContainerRef.current === null) {
@@ -130,7 +130,7 @@ const Slider = ({ className, value, buffered, minimumValue, maximumValue, disabl
             const hoveredSeconds = calculateValueForMouseX(event.clientX) / 1000;
             const x = event.clientX;
             const y = event.clientY;
-            shell.transport.send('seek-hover', [
+            shell.send('seek-hover', [
                 hoveredSeconds.toString(),
                 x.toString(),
                 y.toString()
@@ -141,7 +141,7 @@ const Slider = ({ className, value, buffered, minimumValue, maximumValue, disabl
     const handleMouseLeave = React.useCallback(() => {
         // Only enable thumbfast for timeline sliders (not volume sliders)
         if (shell.active && className && className.includes('slider') && !className.includes('volume')) {
-            shell.transport.send('seek-leave', {});
+            shell.send('seek-leave', {});
         }
     }, [shell, className]);
 
