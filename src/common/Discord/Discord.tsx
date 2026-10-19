@@ -3,8 +3,6 @@ import { usePlatform } from '../Platform';
 import useProfile from '../useProfile';
 import type { DiscordActivity as Activity } from './activity';
 
-const CONNECT_RETRY_INTERVAL = 15000;
-
 type DiscordContextValue = {
     available: boolean,
     connected: boolean,
@@ -30,69 +28,26 @@ const DiscordProvider = ({ children }: Props) => {
     const { shell } = usePlatform();
     const profile = useProfile();
     const enabled = profile.settings?.discordRpcEnabled === true;
+    // The shell owns the RPC connection and uses the discord-presence IPC.
     const available = shell.active === true;
-    const [connected, setConnected] = useState(false);
     const [activity, setActivityState] = useState<Activity | null>(null);
+    const connected = available && enabled;
     const sentActivity = useRef<Activity | null>(null);
-    const connectRequested = useRef(false);
     const shellRef = useRef(shell);
     shellRef.current = shell;
 
     useEffect(() => {
-        if (!available) return;
-
-        const onStatus = (data: { connected: boolean }) => {
-            connectRequested.current = false;
-            setConnected(data.connected === true);
-        };
-
-        shellRef.current.on('discord-status', onStatus);
-
-        return () => {
-            shellRef.current.off('discord-status', onStatus);
-        };
-    }, [available]);
-
-    useEffect(() => {
-        if (!available) {
-            connectRequested.current = false;
-            setConnected(false);
+        if (!available || !enabled) {
             sentActivity.current = null;
-            return;
         }
-
-        if (!enabled) {
-            connectRequested.current = false;
-            if (connected) {
-                shellRef.current.send('discord-disconnect', {});
-            }
-            sentActivity.current = null;
-            return;
-        }
-
-        if (connected) return;
-
-        const requestConnect = () => {
-            if (!connectRequested.current) {
-                connectRequested.current = true;
-                shellRef.current.send('discord-connect', {});
-            }
-        };
-
-        requestConnect();
-        const interval = window.setInterval(requestConnect, CONNECT_RETRY_INTERVAL);
-
-        return () => {
-            window.clearInterval(interval);
-        };
-    }, [available, connected, enabled]);
+    }, [available, enabled]);
 
     useEffect(() => {
         if (!available || !enabled || !connected) return;
 
         if (activity === null) {
             if (sentActivity.current !== null) {
-                shellRef.current.send('discord-clear-activity', {});
+                shellRef.current.sendDiscord('discord-presence', 'clear');
                 sentActivity.current = null;
             }
             return;
@@ -100,13 +55,28 @@ const DiscordProvider = ({ children }: Props) => {
 
         if (sameActivity(sentActivity.current, activity)) return;
 
-        shellRef.current.send('discord-set-activity', {
-            state: activity.state,
-            details: activity.details || '',
-            image: activity.image || null,
-            startTimestamp: activity.startTimestamp || null,
-            endTimestamp: activity.endTimestamp || null,
-        });
+        const startTimestamp = typeof activity.startTimestamp === 'number' ? activity.startTimestamp : null;
+        const endTimestamp = typeof activity.endTimestamp === 'number' ? activity.endTimestamp : null;
+        const now = Math.floor(Date.now() / 1000);
+        const elapsed = startTimestamp === null ? 0 : Math.max(now - startTimestamp, 0);
+        const duration = startTimestamp === null || endTimestamp === null ?
+            0 : Math.max(endTimestamp - startTimestamp, elapsed);
+        const paused = activity.state.startsWith('Paused');
+
+        shellRef.current.sendDiscord(
+            'discord-presence',
+            'watching',
+            'movie',
+            activity.details || 'Stremio',
+            '',
+            '',
+            '',
+            '',
+            activity.image || '',
+            `${elapsed}`,
+            `${duration}`,
+            paused ? 'yes' : 'no',
+        );
         sentActivity.current = activity;
     }, [activity, available, connected, enabled]);
 

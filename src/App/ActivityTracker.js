@@ -1,8 +1,8 @@
 const React = require('react');
-const { useShell } = require('stremio/common');
+const { usePlatform } = require('stremio/common');
 
 const ActivityTracker = () => {
-    const shell = useShell();
+    const { shell } = usePlatform();
 
     React.useEffect(() => {
         const handleHashChange = () => {

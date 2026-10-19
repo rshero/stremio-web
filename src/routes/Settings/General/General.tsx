@@ -2,7 +2,7 @@ import React, { forwardRef, useCallback, useEffect, useMemo, useState } from 're
 import { useTranslation } from 'react-i18next';
 import { useCore } from 'stremio/core';
 import { Button, Toggle } from 'stremio/components';
-import { usePlatform, useToast, useDiscord } from 'stremio/common';
+import { usePlatform, useToast } from 'stremio/common';
 import { Section, Option, Link } from '../components';
 import User from './User';
 import useDataExport from './useDataExport';
@@ -16,9 +16,8 @@ const General = forwardRef<HTMLDivElement, Props>(({ profile }: Props, ref) => {
     const { t } = useTranslation();
     const core = useCore();
     const platform = usePlatform();
-    const toast = useToast();
-    const discord = useDiscord();
     const { shell } = platform;
+    const toast = useToast();
     const [dataExport, loadDataExport] = useDataExport();
 
     const [traktAuthStarted, setTraktAuthStarted] = useState(false);
@@ -62,24 +61,6 @@ const General = forwardRef<HTMLDivElement, Props>(({ profile }: Props, ref) => {
             });
         }
     }, [isTraktAuthenticated, profile.auth]);
-
-    const discordToggle = useMemo(() => ({
-        checked: profile.settings.discordRpcEnabled === true,
-        onClick: () => {
-            const enabled = profile.settings.discordRpcEnabled !== true;
-            shell.sendDiscord('discord-toggle', enabled);
-            core.transport.dispatch({
-                action: 'Ctx',
-                args: {
-                    action: 'UpdateSettings',
-                    args: {
-                        ...profile.settings,
-                        discordRpcEnabled: enabled
-                    }
-                }
-            });
-        }
-    }), [core, profile.settings, shell]);
 
     useEffect(() => {
         if (dataExport.exportUrl) {
@@ -155,11 +136,25 @@ const General = forwardRef<HTMLDivElement, Props>(({ profile }: Props, ref) => {
                 </Button>
             </Option>
             {
-                discord.available &&
-                    <Option className={styles['discord-container']} icon={'discord'} label={'SETTINGS_DISCORD'}>
+                shell.active &&
+                    <Option label={'Discord rich presence'}>
                         <Toggle
                             tabIndex={-1}
-                            {...discordToggle}
+                            checked={profile.settings.discordRpcEnabled === true}
+                            onClick={() => {
+                                const enabled = profile.settings.discordRpcEnabled !== true;
+                                shell.sendDiscord('discord-toggle', enabled);
+                                core.transport.dispatch({
+                                    action: 'Ctx',
+                                    args: {
+                                        action: 'UpdateSettings',
+                                        args: {
+                                            ...profile.settings,
+                                            discordRpcEnabled: enabled
+                                        }
+                                    }
+                                });
+                            }}
                         />
                     </Option>
             }

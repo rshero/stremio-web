@@ -11,6 +11,7 @@ const { FullscreenProvider, ToastProvider, TooltipProvider, ShortcutsProvider, D
 const ServicesToaster = require('./ServicesToaster');
 const SearchParamsHandler = require('./SearchParamsHandler');
 const DeepLinkHandler = require('./DeepLinkHandler');
+const ActivityTracker = require('./ActivityTracker');
 const { default: UpdaterBanner } = require('./UpdaterBanner');
 const { default: ShortcutsModal } = require('./ShortcutsModal');
 const { default: GamepadModal } = require('./GamepadModal');
@@ -189,6 +190,7 @@ const App = () => {
                         <ShortcutsProvider onShortcut={onShortcut}>
                             <FullscreenProvider>
                                 <DiscordProvider>
+                                    <ActivityTracker />
                                     {
                                         shortcutModalOpen && <ShortcutsModal onClose={closeShortcutsModal}/>
                                     }
