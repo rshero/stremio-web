@@ -18,6 +18,7 @@ const General = forwardRef<HTMLDivElement, Props>(({ profile }: Props, ref) => {
     const platform = usePlatform();
     const toast = useToast();
     const discord = useDiscord();
+    const { shell } = platform;
     const [dataExport, loadDataExport] = useDataExport();
 
     const [traktAuthStarted, setTraktAuthStarted] = useState(false);
@@ -65,18 +66,20 @@ const General = forwardRef<HTMLDivElement, Props>(({ profile }: Props, ref) => {
     const discordToggle = useMemo(() => ({
         checked: profile.settings.discordRpcEnabled === true,
         onClick: () => {
+            const enabled = profile.settings.discordRpcEnabled !== true;
+            shell.sendDiscord('discord-toggle', enabled);
             core.transport.dispatch({
                 action: 'Ctx',
                 args: {
                     action: 'UpdateSettings',
                     args: {
                         ...profile.settings,
-                        discordRpcEnabled: !profile.settings.discordRpcEnabled
+                        discordRpcEnabled: enabled
                     }
                 }
             });
         }
-    }), [profile.settings]);
+    }), [core, profile.settings, shell]);
 
     useEffect(() => {
         if (dataExport.exportUrl) {

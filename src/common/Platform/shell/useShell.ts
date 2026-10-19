@@ -62,6 +62,18 @@ const useShell = (): Shell => {
         }
     };
 
+    const sendDiscord = (method: string, ...args: (string | boolean)[]) => {
+        try {
+            IPC?.postMessage(JSON.stringify({
+                id: 0,
+                type: 7,
+                args: [method, ...args],
+            }));
+        } catch (e) {
+            console.error('Shell', 'Failed to send Discord event', e);
+        }
+    };
+
     useEffect(() => {
         const onWindowVisibilityChanged = (data: WindowVisibility) => {
             setState((state) => ({
@@ -131,6 +143,7 @@ const useShell = (): Shell => {
     return {
         active: !!IPC,
         send,
+        sendDiscord,
         on,
         off,
         state,
