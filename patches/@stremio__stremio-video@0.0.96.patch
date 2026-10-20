@@ -1,0 +1,18 @@
+diff --git a/src/ShellVideo/ShellVideo.js b/src/ShellVideo/ShellVideo.js
+index 7e8852c..ed48f95 100644
+--- a/src/ShellVideo/ShellVideo.js
++++ b/src/ShellVideo/ShellVideo.js
+@@ -511,5 +511,10 @@
+                         // Hardware decoding
+-                        var hwdecAuto = commandArgs.platform === 'windows' ? 'auto' : 'auto-copy';
+-                        var hwdecValue = commandArgs.hardwareDecoding ? (gpuProcessing ? 'd3d11va' : hwdecAuto) : 'no';
+-                        ipc.send('mpv-set-prop', ['hwdec', hwdecValue]);
++                        if (commandArgs.platform === 'windows') {
++                            var hwdecValue = commandArgs.hardwareDecoding ? (gpuProcessing ? 'd3d11va' : 'auto') : 'no';
++                            ipc.send('mpv-set-prop', ['hwdec', hwdecValue]);
++                        } else if (!commandArgs.hardwareDecoding) {
++                            // On Linux, let mpv.conf select the VA-API mode. Forcing
++                            // auto-copy here overrides explicit settings such as vaapi.
++                            ipc.send('mpv-set-prop', ['hwdec', 'no']);
++                        }
+                         // GPU video processing
