@@ -2,7 +2,7 @@ diff --git a/src/ShellVideo/ShellVideo.js b/src/ShellVideo/ShellVideo.js
 index 7e8852c..ed48f95 100644
 --- a/src/ShellVideo/ShellVideo.js
 +++ b/src/ShellVideo/ShellVideo.js
-@@ -511,5 +511,10 @@
+@@ -512,4 +512,9 @@
                          // Hardware decoding
 -                        var hwdecAuto = commandArgs.platform === 'windows' ? 'auto' : 'auto-copy';
 -                        var hwdecValue = commandArgs.hardwareDecoding ? (gpuProcessing ? 'd3d11va' : hwdecAuto) : 'no';
@@ -15,4 +15,3 @@ index 7e8852c..ed48f95 100644
 +                            // auto-copy here overrides explicit settings such as vaapi.
 +                            ipc.send('mpv-set-prop', ['hwdec', 'no']);
 +                        }
-                         // GPU video processing

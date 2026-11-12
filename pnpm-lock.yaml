@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  '@stremio/stremio-video@0.0.96': cc67b19cc63e1a83a4f191fbdfa1ab33fd17f402360c18f3a69b8b5960163169
+  '@stremio/stremio-video@0.0.96': ddc03b11c603a61e0e38959245a47f3511eb25285e45b197a5acf40f691b55d7
 
 importers:
 
@@ -28,7 +28,7 @@ importers:
         version: 5.15.0
       '@stremio/stremio-video':
         specifier: 0.0.96
-        version: 0.0.96(patch_hash=cc67b19cc63e1a83a4f191fbdfa1ab33fd17f402360c18f3a69b8b5960163169)
+        version: 0.0.96(patch_hash=ddc03b11c603a61e0e38959245a47f3511eb25285e45b197a5acf40f691b55d7)
       a-color-picker:
         specifier: 1.2.1
         version: 1.2.1
@@ -6500,7 +6500,7 @@ snapshots:
 
   '@stremio/stremio-icons@5.15.0': {}
 
-  '@stremio/stremio-video@0.0.96(patch_hash=cc67b19cc63e1a83a4f191fbdfa1ab33fd17f402360c18f3a69b8b5960163169)':
+  '@stremio/stremio-video@0.0.96(patch_hash=ddc03b11c603a61e0e38959245a47f3511eb25285e45b197a5acf40f691b55d7)':
     dependencies:
       '@stremio/libass-wasm': https://github.com/Stremio/JavascriptSubtitlesOctopus/releases/download/v4.2.6/stremio-libass-wasm-4.2.6.tgz
       buffer: 6.0.3
